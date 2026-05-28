@@ -48,6 +48,7 @@ const BillView: React.FC = () => {
             customerType: order?.customerType || null,
             transportName: dispatch?.transportName || null,
             lrNumber: dispatch?.lrNumber || null,
+            receivedAt: order?.receivedAt || null,
           });
 
           if (order?.paperOrderImageUrl) {
@@ -149,14 +150,7 @@ const BillView: React.FC = () => {
       </div>
 
       {/* Main layout: invoice + optional paper reference panel */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: paperImageUrl ? '1fr 300px' : '1fr',
-        gap: '1.5rem',
-        alignItems: 'flex-start',
-        maxWidth: paperImageUrl ? '1160px' : '820px',
-        margin: '0 auto',
-      }}>
+      <div className={`invoice-layout-grid ${paperImageUrl ? 'has-paper-slip' : ''}`}>
 
       {/* Invoice Card */}
       <div className="invoice-wrapper" style={{ maxWidth: 'none' }}>
@@ -212,6 +206,17 @@ const BillView: React.FC = () => {
               )}
               <div className="invoice-meta-sub" style={{ marginTop: '0.3rem' }}>
                 <span style={{ marginRight: '0.75rem' }}>Order: <strong>{bill.orderNumber}</strong></span>
+                {orderExtra?.receivedAt && (
+                  <span style={{ marginLeft: '1rem' }}>
+                    Paper Order Received At: <strong>
+                      {new Date(orderExtra.receivedAt).toLocaleDateString('en-IN', {
+                        day: '2-digit', month: 'short', year: 'numeric'
+                      })} - {new Date(orderExtra.receivedAt).toLocaleTimeString('en-IN', {
+                        hour: '2-digit', minute: '2-digit'
+                      })}
+                    </strong>
+                  </span>
+                )}
               </div>
               {/* Extra order info row */}
               {orderExtra && (
@@ -268,13 +273,13 @@ const BillView: React.FC = () => {
             </div>
           </div>
 
-          {/* Line Items */}
           <div className="invoice-body">
-            <table className="invoice-table">
-              <thead>
-                <tr>
-                  <th style={{ width: 36 }}>#</th>
-                  <th>Product</th>
+            <div className="invoice-table-wrapper">
+              <table className="invoice-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 36 }}>#</th>
+                    <th className="col-product">Product</th>
                   <th>SKU</th>
                   <th>Packaging</th>
                   <th style={{ textAlign: 'center' }}>Qty (Pcs)</th>
@@ -300,7 +305,7 @@ const BillView: React.FC = () => {
                   return (
                     <tr key={i}>
                       <td style={{ color: 'var(--text-dim)', fontWeight: 500 }}>{i + 1}</td>
-                      <td style={{ fontWeight: 600 }}>{item.productName}</td>
+                      <td className="col-product" style={{ fontWeight: 600 }}>{item.productName}</td>
                       <td style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{item.sku}</td>
                       <td>
                         <span style={{
@@ -327,6 +332,7 @@ const BillView: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
 
             {/* Totals */}
             <div className="invoice-totals">
@@ -401,7 +407,7 @@ const BillView: React.FC = () => {
 
       {/* Paper Order Reference Panel — second column of the outer grid */}
       {paperImageUrl && (
-        <div className="no-print" style={{ position: 'sticky', top: 'calc(var(--header-height) + 1rem)' }}>
+        <div className="no-print" style={{ position: 'sticky', top: 'calc(var(--header-height) + 1rem)', maxWidth: '250px', width: '100%', justifySelf: 'center' }}>
           <div style={{
             background: 'var(--card)',
             border: '1px solid var(--border)',
@@ -437,6 +443,13 @@ const BillView: React.FC = () => {
             </div>
             <div style={{ padding: '0.65rem 1rem', fontSize: '0.7rem', color: 'var(--text-dim)', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
               Click image to zoom • Use for product verification
+              {orderExtra?.receivedAt && (
+                <div style={{ marginTop: '0.35rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                  Slip Received: {new Date(orderExtra.receivedAt).toLocaleString('en-IN', {
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

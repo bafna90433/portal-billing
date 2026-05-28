@@ -116,7 +116,7 @@ const BillingDashboard: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Upcoming Bills</div>
-              <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(245,158,11,0.15)', color: '#D97706', border: '1px solid rgba(245,158,11,0.3)' }}>DRAFT</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(99,102,241,0.15)', color: '#6366F1', border: '1px solid rgba(99,102,241,0.3)' }}>PACKING / HOLD</span>
             </div>
             {draftBills.length > 0 && (
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -149,14 +149,31 @@ const BillingDashboard: React.FC = () => {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}
                   >
-                    <td style={{ padding: '0.5rem 1.25rem', fontWeight: 700, color: 'var(--primary)', fontSize: '0.82rem' }}>{b.orderNumber}</td>
+                    <td style={{ padding: '0.5rem 1.25rem', fontWeight: 700, color: 'var(--primary)', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {b.orderNumber}
+                      {b.isDraft ? (
+                        <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(100,116,139,0.12)', color: '#64748B' }}>DRAFT</span>
+                      ) : b.estimatedDeliveryDate ? (
+                        <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.12)', color: '#D97706' }}>HOLD</span>
+                      ) : (
+                        <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(99,102,241,0.12)', color: '#6366F1' }}>PACKING</span>
+                      )}
+                    </td>
                     <td style={{ padding: '0.5rem 1.25rem', fontWeight: 600, fontSize: '0.82rem' }}>{b.customerName}</td>
                     <td style={{ padding: '0.5rem 1.25rem', fontWeight: 700, fontSize: '0.82rem', color: '#D97706' }}>
                       ~₹{(b.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </td>
-                    <td style={{ padding: '0.5rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                      {new Date(b.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                    </td>
+                     <td style={{ padding: '0.5rem 1.25rem', fontSize: '0.78rem' }}>
+                       {b.estimatedDeliveryDate ? (
+                         <span style={{ color: '#D97706', fontWeight: 700, background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                           ⏳ Est: {new Date(b.estimatedDeliveryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                         </span>
+                       ) : (
+                         <span style={{ color: 'var(--text-muted)' }}>
+                           {new Date(b.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                         </span>
+                       )}
+                     </td>
                   </tr>
                 ))}
               </tbody>

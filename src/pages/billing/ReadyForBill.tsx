@@ -18,10 +18,20 @@ const ReadyForBill: React.FC = () => {
   const fetchReadyOrders = useCallback(async () => {
     setLoading(true);
     try {
-      // Confirmed for dispatch — status 'dispatched' or 'partial', without a bill yet
-      const { data } = await api.get('/orders?status=dispatched&limit=100');
-      const dispatched: any[] = data.orders || [];
-      setOrders(dispatched.filter((o: any) => !o.billInfo));
+      // Fetch orders in dispatched, partial, packing, or hold status
+      const { data } = await api.get('/orders?status=dispatched,partial,packing_in_progress,waiting&limit=100');
+      const fetchedOrders: any[] = data.orders || [];
+      
+      const filtered = fetchedOrders.filter((o: any) => {
+        // Always display packing or waiting (hold) orders so the bill is accessible
+        if (o.status === 'packing_in_progress' || o.status === 'waiting') {
+          return true;
+        }
+        // For partial or fully dispatched orders, only show if they haven't been billed yet
+        return !o.billInfo;
+      });
+      
+      setOrders(filtered);
     } catch (err) {
       toast.error('Failed to load orders');
     } finally {
@@ -31,10 +41,19 @@ const ReadyForBill: React.FC = () => {
 
   useEffect(() => { fetchReadyOrders(); }, [fetchReadyOrders]);
 
-  const handleGenerateBill = (order: any) => {
+  const handleGenerateBill = async (order: any) => {
     const dispatchId = order.dispatchInfo?._id;
     if (!dispatchId) {
-      toast.error('No dispatch found for this order.');
+      setGeneratingId(order._id);
+      try {
+        const { data } = await api.post('/billing/draft', { orderId: order._id });
+        toast.success('Bill generated from order details!');
+        await fetchReadyOrders();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to generate bill');
+      } finally {
+        setGeneratingId(null);
+      }
       return;
     }
     navigate(`/billing/create/${order._id}?dispatchId=${dispatchId}`);
@@ -47,7 +66,7 @@ const ReadyForBill: React.FC = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Ready for Bill</h1>
-          <p className="page-subtitle">Orders confirmed for dispatch — generate bills here</p>
+          <p className="page-subtitle">Orders confirmed for dispatch — generate or print bills here</p>
         </div>
         <button className="btn btn-secondary" onClick={fetchReadyOrders} disabled={loading}>
           <RefreshCw size={15} style={loading ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
@@ -81,8 +100,8 @@ const ReadyForBill: React.FC = () => {
           </div>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
             {totalReady === 0
-              ? 'No orders waiting for billing right now.'
-              : `${totalReady} order${totalReady > 1 ? 's' : ''} confirmed for dispatch and pending bill generation.`}
+               ? 'No orders waiting for billing right now.'
+               : `${totalReady} order${totalReady > 1 ? 's' : ''} active and pending bill generation or printing.`}
           </div>
         </div>
         <div style={{
@@ -121,7 +140,11 @@ const ReadyForBill: React.FC = () => {
                 padding: '1.25rem',
                 position: 'relative',
                 overflow: 'hidden',
-                borderLeft: '4px solid var(--warning)',
+                borderLeft: order.status === 'waiting'
+                  ? '4px solid #F59E0B'
+                  : order.status === 'packing_in_progress'
+                    ? '4px solid #6366F1'
+                    : '4px solid var(--success)',
               }}>
                 {/* Order header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -138,7 +161,15 @@ const ReadyForBill: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  {order.status === 'partial' ? (
+                  {order.status === 'waiting' ? (
+                    <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(245,158,11,0.15)', color: '#D97706' }}>
+                      <Clock size={11} /> On Hold
+                    </span>
+                  ) : order.status === 'packing_in_progress' ? (
+                    <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(99,102,241,0.15)', color: '#6366F1' }}>
+                      <Loader size={11} style={{ animation: 'spin 1.5s linear infinite' }} /> Packing
+                    </span>
+                  ) : order.status === 'partial' ? (
                     <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>
                       <Clock size={11} /> Partial Pending
                     </span>
@@ -150,42 +181,48 @@ const ReadyForBill: React.FC = () => {
                 </div>
 
                 {/* Order details */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem', padding: '0.85rem', background: 'var(--bg3)', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem', padding: '0.85rem', background: 'var(--bg3)', borderRadius: 'var(--radius-sm)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    <Package size={14} />
+                    <span>{itemCount} product{itemCount !== 1 ? 's' : ''} · {totalQty} qty total</span>
+                  </div>
+                  {dispatch.transportName && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                      <Package size={14} />
-                      <span>{itemCount} product{itemCount !== 1 ? 's' : ''} · {totalQty} qty total</span>
+                      <Truck size={14} />
+                      <span>{dispatch.transportName}{dispatch.lrNumber ? ` · LR: ${dispatch.lrNumber}` : ''}</span>
                     </div>
-                    {dispatch.transportName && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                        <Truck size={14} />
-                        <span>{dispatch.transportName}{dispatch.lrNumber ? ` · LR: ${dispatch.lrNumber}` : ''}</span>
+                  )}
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.6rem', marginTop: '0.2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                      <Clock size={12} />
+                      <span>Ordered: {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} · {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    {order.estimatedDeliveryDate && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: '#D97706', fontWeight: 600 }}>
+                        <Clock size={12} />
+                        <span>Est. Delivery: {new Date(order.estimatedDeliveryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                       </div>
                     )}
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.6rem', marginTop: '0.2rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                        <Clock size={12} />
-                        <span>Ordered: {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} · {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      {dispatch.dispatchedAt && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.82rem', color: '#10B981', fontWeight: 600 }}>
-                            <Truck size={14} />
-                            <span>Dispatched: {new Date(dispatch.dispatchedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} · {new Date(dispatch.dispatchedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
-                          <div style={{ marginLeft: '1.45rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                            Duration: {(() => {
-                              const diff = new Date(dispatch.dispatchedAt).getTime() - new Date(order.createdAt).getTime();
-                              const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                              const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                              if (days === 0 && hours === 0) return 'less than an hour';
-                              return `${days > 0 ? `${days}d ` : ''}${hours}h`;
-                            })()}
-                          </div>
+                    {dispatch.dispatchedAt && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.82rem', color: '#10B981', fontWeight: 600 }}>
+                          <Truck size={14} />
+                          <span>Dispatched: {new Date(dispatch.dispatchedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} · {new Date(dispatch.dispatchedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                      )}
-                    </div>
+                        <div style={{ marginLeft: '1.45rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                          Duration: {(() => {
+                            const diff = new Date(dispatch.dispatchedAt).getTime() - new Date(order.createdAt).getTime();
+                            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            if (days === 0 && hours === 0) return 'less than an hour';
+                            return `${days > 0 ? `${days}d ` : ''}${hours}h`;
+                          })()}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                </div>
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '0.6rem' }}>
@@ -196,16 +233,30 @@ const ReadyForBill: React.FC = () => {
                   >
                     View
                   </button>
-                  <button
-                    className="btn btn-success"
-                    style={{ flex: 1, justifyContent: 'center', opacity: order.status === 'partial' ? 0.6 : 1 }}
-                    onClick={() => handleGenerateBill(order)}
-                    disabled={isGenerating || !dispatch._id || order.status === 'partial'}
-                  >
-                    {isGenerating
-                      ? <><Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating...</>
-                      : order.status === 'partial' ? <><Clock size={15} /> Waiting for Stock</> : <><Receipt size={15} /> Generate Bill</>}
-                  </button>
+                  {order.billInfo ? (
+                    <button
+                      className="btn btn-primary"
+                      style={{ flex: 1, justifyContent: 'center' }}
+                      onClick={() => navigate(`/billing/${order.billInfo._id}`)}
+                    >
+                      <Receipt size={15} /> Print / View Bill
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-success"
+                      style={{ flex: 1, justifyContent: 'center', opacity: (order.status === 'waiting') ? 0.6 : 1 }}
+                      onClick={() => handleGenerateBill(order)}
+                      disabled={isGenerating || order.status === 'waiting'}
+                    >
+                      {isGenerating ? (
+                        <><Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating...</>
+                      ) : order.status === 'waiting' ? (
+                        <><Clock size={15} /> Order on Hold</>
+                      ) : (
+                        <><Receipt size={15} /> Generate Bill</>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             );
