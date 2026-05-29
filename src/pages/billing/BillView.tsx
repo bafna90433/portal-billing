@@ -29,6 +29,14 @@ const BillView: React.FC = () => {
   const [savingTally, setSavingTally] = useState(false);
   const [settings, setSettings] = useState<any>(null);
 
+  const getDeclaration = () => {
+    const terms = settings?.payment_terms?.value;
+    if (!terms || terms === 'Payment due within 30 days.') {
+      return `. Goods once sold cannot be returned and/or exchanged.\n. Payment Terms - 15 days.\n. Interest will be recovered at 24% per annum on overdue bills.`;
+    }
+    return terms;
+  };
+
   const fetchBill = async () => {
     try {
       try {
@@ -469,7 +477,7 @@ const BillView: React.FC = () => {
               }}>
                 <div style={{ textDecoration: 'underline', fontWeight: 700, marginBottom: '0.35rem' }}>Declaration</div>
                 <div style={{ whiteSpace: 'pre-line', fontSize: '0.78rem', fontWeight: 500 }}>
-                  {settings?.payment_terms?.value || `. Goods once sold cannot be returned and/or exchanged.\n. Payment Terms - 15 days.\n. Interest will be recovered at 24% per annum on overdue bills.`}
+                  {getDeclaration()}
                 </div>
               </div>
 
