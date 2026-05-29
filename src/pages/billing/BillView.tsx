@@ -180,7 +180,7 @@ const BillView: React.FC = () => {
               <img 
                 src="https://ik.imagekit.io/rishii/stock-management/tap/Jet%202916%20_%2004.webp" 
                 alt="BAFNA TOYS Logo" 
-                style={{ height: 105, objectFit: 'contain' }} 
+                style={{ height: 140, objectFit: 'contain' }} 
               />
               <div style={{ textAlign: 'left', color: '#000', fontFamily: 'sans-serif' }}>
                 <div style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.02em', color: '#000', textTransform: 'uppercase', marginBottom: '0.15rem', lineHeight: 1.1 }}>
@@ -575,8 +575,8 @@ const BillView: React.FC = () => {
                     src={logoUrl} 
                     alt={`Brand Logo ${idx + 1}`} 
                     style={{ 
-                      height: 38, 
-                      maxWidth: 100, 
+                      height: 52, 
+                      maxWidth: 140, 
                       objectFit: 'contain', 
                       display: 'block' 
                     }} 
