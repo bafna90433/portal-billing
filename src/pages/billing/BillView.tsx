@@ -241,18 +241,17 @@ const BillView: React.FC = () => {
                   )}
                 </div>
               )}
-              <div className="invoice-meta-sub" style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-dim)' }}>Order: <strong style={{ color: 'var(--text)' }}>{bill.orderNumber}</strong></span>
-                  {bill.tallyBillNumber && (
-                    <span style={{ color: 'var(--text-muted)' }}>•</span>
-                  )}
-                  {bill.tallyBillNumber && (
-                    <span style={{ color: 'var(--text-dim)' }}>Tally Bill No: <strong style={{ color: 'var(--text)' }}>{bill.tallyBillNumber}</strong></span>
-                  )}
+              <div className="invoice-meta-sub" style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ color: 'var(--text-dim)' }}>
+                  Order: <strong style={{ color: 'var(--text)' }}>{bill.orderNumber}</strong>
                 </div>
+                {bill.tallyBillNumber && (
+                  <div style={{ color: 'var(--text-dim)' }}>
+                    Tally Bill No: <strong style={{ color: 'var(--text)' }}>{bill.tallyBillNumber}</strong>
+                  </div>
+                )}
                 {orderExtra?.receivedAt && (
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '0.1rem' }}>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
                     Paper Order Received At: <strong style={{ color: 'var(--text)' }}>
                       {new Date(orderExtra.receivedAt).toLocaleDateString('en-IN', {
                         day: '2-digit', month: 'short', year: 'numeric'
