@@ -241,23 +241,26 @@ const BillView: React.FC = () => {
                   )}
                 </div>
               )}
-              <div className="invoice-meta-sub" style={{ marginTop: '0.3rem' }}>
-                <span style={{ marginRight: '0.75rem' }}>Order: <strong>{bill.orderNumber}</strong></span>
-                {bill.tallyBillNumber && (
-                  <span style={{ marginRight: '0.75rem', marginLeft: '0.5rem' }}>
-                    Tally Bill No: <strong>{bill.tallyBillNumber}</strong>
-                  </span>
-                )}
+              <div className="invoice-meta-sub" style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-dim)' }}>Order: <strong style={{ color: 'var(--text)' }}>{bill.orderNumber}</strong></span>
+                  {bill.tallyBillNumber && (
+                    <span style={{ color: 'var(--text-muted)' }}>•</span>
+                  )}
+                  {bill.tallyBillNumber && (
+                    <span style={{ color: 'var(--text-dim)' }}>Tally Bill No: <strong style={{ color: 'var(--text)' }}>{bill.tallyBillNumber}</strong></span>
+                  )}
+                </div>
                 {orderExtra?.receivedAt && (
-                  <span style={{ marginLeft: '1rem' }}>
-                    Paper Order Received At: <strong>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '0.1rem' }}>
+                    Paper Order Received At: <strong style={{ color: 'var(--text)' }}>
                       {new Date(orderExtra.receivedAt).toLocaleDateString('en-IN', {
                         day: '2-digit', month: 'short', year: 'numeric'
                       })} - {new Date(orderExtra.receivedAt).toLocaleTimeString('en-IN', {
-                        hour: '2-digit', minute: '2-digit'
-                      })}
+                        hour: '2-digit', minute: '2-digit', hour12: true
+                      }).toLowerCase()}
                     </strong>
-                  </span>
+                  </div>
                 )}
               </div>
               {/* Extra order info row */}
