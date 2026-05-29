@@ -175,22 +175,28 @@ const BillView: React.FC = () => {
 
           {/* Header: brand + invoice number */}
           <div className="invoice-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem' }}>
               <img 
                 src="https://ik.imagekit.io/rishii/stock-management/tap/Jet%202916%20_%2004.webp" 
                 alt="BAFNA TOYS Logo" 
-                style={{ width: 72, height: 72, borderRadius: 12, objectFit: 'cover', border: '1px solid rgba(0,0,0,0.08)' }} 
+                style={{ height: 105, objectFit: 'contain' }} 
               />
-              <div>
-                <div className="invoice-brand-name" style={{ textTransform: 'uppercase', fontSize: '1.8rem', fontWeight: 900, lineHeight: 1.1 }}>
-                  {settings?.company_name?.value || 'BAFNA TOYS'}
+              <div style={{ textAlign: 'left', color: '#000', fontFamily: 'sans-serif' }}>
+                <div style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.02em', color: '#000', textTransform: 'uppercase', marginBottom: '0.15rem', lineHeight: 1.1 }}>
+                  {settings?.company_name?.value ? String(settings.company_name.value).replace(/\s/g, '') : 'BAFNATOYS'}
                 </div>
-                <div className="invoice-brand-sub" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '0.15rem' }}>
-                  {[settings?.company_phone?.value || '+919043347300', settings?.company_email?.value || 'bafnatoysphotos@gmail.com'].filter(Boolean).join('  ·  ')}
+                <div style={{ fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.3, color: '#000' }}>
+                  1-12, Thondamuthur Road,<br />
+                  Coimbatore - 641 007<br />
+                  Tamil Nadu
                 </div>
-                <div className="invoice-brand-address" style={{ fontSize: '0.8rem', color: 'var(--text-dim)', lineHeight: 1.5, marginTop: '0.4rem' }}>
-                  {settings?.company_address?.value || 'BAFNATOYS 1-12 Thondamuthur Road, Coimbatore - 641 007 Tamil Nadu'}<br />
-                  <strong style={{ color: 'var(--text)' }}>GSTIN:</strong> {settings?.company_gstin?.value || '33ANCPH3967L1ZT'}
+                <div style={{ fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.3, color: '#000', marginTop: '0.25rem' }}>
+                  Phone No : {settings?.company_phone?.value ? String(settings.company_phone.value).replace('+91', '') : '9043347300'}<br />
+                  Phone No : 93639 13039
+                </div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.3, color: '#000', marginTop: '0.25rem' }}>
+                  GSTIN/UIN: {settings?.company_gstin?.value || '33ANCPH3967L1ZT'}<br />
+                  State Name : Tamil Nadu, Code : 33
                 </div>
               </div>
             </div>
