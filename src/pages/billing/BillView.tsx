@@ -175,16 +175,23 @@ const BillView: React.FC = () => {
 
           {/* Header: brand + invoice number */}
           <div className="invoice-header">
-            <div>
-              <div className="invoice-brand-name" style={{ textTransform: 'uppercase', fontSize: '1.8rem', fontWeight: 900 }}>
-                {settings?.company_name?.value || 'BAFNA TOYS'}
-              </div>
-              <div className="invoice-brand-sub" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '0.15rem' }}>
-                {[settings?.company_phone?.value || '+919043347300', settings?.company_email?.value || 'bafnatoysphotos@gmail.com'].filter(Boolean).join('  ·  ')}
-              </div>
-              <div className="invoice-brand-address" style={{ fontSize: '0.8rem', color: 'var(--text-dim)', lineHeight: 1.5, marginTop: '0.4rem' }}>
-                {settings?.company_address?.value || 'BAFNATOYS 1-12 Thondamuthur Road, Coimbatore - 641 007 Tamil Nadu'}<br />
-                <strong style={{ color: 'var(--text)' }}>GSTIN:</strong> {settings?.company_gstin?.value || '33ANCPH3967L1ZT'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <img 
+                src="https://ik.imagekit.io/rishii/stock-management/tap/Jet%202916%20_%2004.webp" 
+                alt="BAFNA TOYS Logo" 
+                style={{ width: 72, height: 72, borderRadius: 12, objectFit: 'cover', border: '1px solid rgba(0,0,0,0.08)' }} 
+              />
+              <div>
+                <div className="invoice-brand-name" style={{ textTransform: 'uppercase', fontSize: '1.8rem', fontWeight: 900, lineHeight: 1.1 }}>
+                  {settings?.company_name?.value || 'BAFNA TOYS'}
+                </div>
+                <div className="invoice-brand-sub" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '0.15rem' }}>
+                  {[settings?.company_phone?.value || '+919043347300', settings?.company_email?.value || 'bafnatoysphotos@gmail.com'].filter(Boolean).join('  ·  ')}
+                </div>
+                <div className="invoice-brand-address" style={{ fontSize: '0.8rem', color: 'var(--text-dim)', lineHeight: 1.5, marginTop: '0.4rem' }}>
+                  {settings?.company_address?.value || 'BAFNATOYS 1-12 Thondamuthur Road, Coimbatore - 641 007 Tamil Nadu'}<br />
+                  <strong style={{ color: 'var(--text)' }}>GSTIN:</strong> {settings?.company_gstin?.value || '33ANCPH3967L1ZT'}
+                </div>
               </div>
             </div>
             <div className="invoice-title-block">
