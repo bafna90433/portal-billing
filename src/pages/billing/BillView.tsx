@@ -23,11 +23,15 @@ const BillView: React.FC = () => {
   const [payMethod, setPayMethod] = useState('cash');
   const [payNote, setPayNote] = useState('');
   const [paying, setPaying] = useState(false);
+  const [editTallyModal, setEditTallyModal] = useState(false);
+  const [tallyBillNoInput, setTallyBillNoInput] = useState('');
+  const [savingTally, setSavingTally] = useState(false);
 
   const fetchBill = async () => {
     try {
       const { data } = await api.get(`/billing/${billId}`);
       setBill(data);
+      setTallyBillNoInput(data.tallyBillNumber || '');
 
       if (data.orderId) {
         // Try source 1: paperOrderImageUrl stored on the Order document
@@ -127,6 +131,9 @@ const BillView: React.FC = () => {
           <ArrowLeft size={16} /> Back
         </button>
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <button className="btn btn-secondary" onClick={() => setEditTallyModal(true)} style={{ color: '#6366F1', borderColor: '#C7D2FE' }} id="edit-tally-btn">
+            📑 Tally No: {bill.tallyBillNumber || 'Add'}
+          </button>
           {bill.paymentStatus !== 'paid' && (
             <button className="btn btn-success" onClick={() => setPayModal(true)} id="record-payment-btn">
               <Plus size={16} /> Record Payment
@@ -171,6 +178,11 @@ const BillView: React.FC = () => {
             <div className="invoice-title-block">
               <span className="invoice-label">Tax Invoice</span>
               <div className="invoice-number">{bill.billNumber}</div>
+              {bill.tallyBillNumber && (
+                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary-light)', marginTop: '0.2rem', fontFamily: 'monospace' }}>
+                  Tally Ref: {bill.tallyBillNumber}
+                </div>
+              )}
               <div className="invoice-date">
                 {new Date(bill.createdAt).toLocaleDateString('en-IN', {
                   day: '2-digit', month: 'long', year: 'numeric',
@@ -206,6 +218,11 @@ const BillView: React.FC = () => {
               )}
               <div className="invoice-meta-sub" style={{ marginTop: '0.3rem' }}>
                 <span style={{ marginRight: '0.75rem' }}>Order: <strong>{bill.orderNumber}</strong></span>
+                {bill.tallyBillNumber && (
+                  <span style={{ marginRight: '0.75rem', marginLeft: '0.5rem' }}>
+                    Tally Bill No: <strong>{bill.tallyBillNumber}</strong>
+                  </span>
+                )}
                 {orderExtra?.receivedAt && (
                   <span style={{ marginLeft: '1rem' }}>
                     Paper Order Received At: <strong>
@@ -543,6 +560,54 @@ const BillView: React.FC = () => {
                 }
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tally Edit Modal */}
+      {editTallyModal && (
+        <div className="modal-overlay" onClick={() => setEditTallyModal(false)}>
+          <div className="modal" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">📑 Update Tally Bill Number</h3>
+              <button className="modal-close" onClick={() => setEditTallyModal(false)}>✕</button>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setSavingTally(true);
+              try {
+                const { data } = await api.patch(`/billing/${billId}/tally`, { tallyBillNumber: tallyBillNoInput });
+                setBill(data);
+                setEditTallyModal(false);
+                toast.success('Tally Bill Number updated!');
+              } catch {
+                toast.error('Failed to update Tally Bill Number');
+              } finally {
+                setSavingTally(false);
+              }
+            }}>
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label className="form-label">Tally Bill Number</label>
+                <input
+                  className="form-control"
+                  type="text"
+                  value={tallyBillNoInput}
+                  onChange={(e) => setTallyBillNoInput(e.target.value)}
+                  placeholder="e.g. TALLY-1002"
+                  required
+                  autoFocus
+                  style={{ fontWeight: 700 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setEditTallyModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-success" disabled={savingTally}>
+                  {savingTally ? <><Loader size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> Saving...</> : 'Save Tally Number'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

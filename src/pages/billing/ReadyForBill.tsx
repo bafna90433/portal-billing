@@ -14,6 +14,14 @@ const ReadyForBill: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [tallyModal, setTallyModal] = useState<{ isOpen: boolean; order: any; targetUrl?: string; actionType: 'view' | 'draft' }>({
+    isOpen: false,
+    order: null,
+    targetUrl: '',
+    actionType: 'view'
+  });
+  const [tallyBillNoInput, setTallyBillNoInput] = useState('');
+  const [savingTally, setSavingTally] = useState(false);
 
   const fetchReadyOrders = useCallback(async () => {
     setLoading(true);
@@ -57,6 +65,66 @@ const ReadyForBill: React.FC = () => {
       return;
     }
     navigate(`/billing/create/${order._id}?dispatchId=${dispatchId}`);
+  };
+
+  const handlePrintViewClick = (order: any) => {
+    setTallyBillNoInput(order.billInfo.tallyBillNumber || '');
+    setTallyModal({
+      isOpen: true,
+      order,
+      targetUrl: `/billing/${order.billInfo._id}`,
+      actionType: 'view'
+    });
+  };
+
+  const handleGenerateDraftClick = (order: any) => {
+    setTallyBillNoInput('');
+    setTallyModal({
+      isOpen: true,
+      order,
+      actionType: 'draft'
+    });
+  };
+
+  const handleTallySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tallyModal.order) return;
+    
+    setSavingTally(true);
+    try {
+      if (tallyModal.actionType === 'view') {
+        const billId = tallyModal.order.billInfo._id;
+        await api.patch(`/billing/${billId}/tally`, { tallyBillNumber: tallyBillNoInput });
+        toast.success('Tally Bill Number updated!');
+        setTallyModal(prev => ({ ...prev, isOpen: false }));
+        navigate(tallyModal.targetUrl || `/billing/${billId}`);
+      } else {
+        setGeneratingId(tallyModal.order._id);
+        setTallyModal(prev => ({ ...prev, isOpen: false }));
+        try {
+          await api.post('/billing/draft', { 
+            orderId: tallyModal.order._id, 
+            tallyBillNumber: tallyBillNoInput 
+          });
+          toast.success('Bill generated successfully!');
+          await fetchReadyOrders();
+          
+          const { data: billRes } = await api.get(`/billing/order/${tallyModal.order._id}`);
+          const targetBill = Array.isArray(billRes) ? billRes[billRes.length - 1] : billRes;
+          if (targetBill?._id) {
+            navigate(`/billing/${targetBill._id}`);
+          }
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Failed to generate bill');
+        } finally {
+          setGeneratingId(null);
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to save Tally Bill Number');
+    } finally {
+      setSavingTally(false);
+    }
   };
 
   const totalReady = orders.length;
@@ -237,7 +305,7 @@ const ReadyForBill: React.FC = () => {
                     <button
                       className="btn btn-primary"
                       style={{ flex: 1, justifyContent: 'center' }}
-                      onClick={() => navigate(`/billing/${order.billInfo._id}`)}
+                      onClick={() => handlePrintViewClick(order)}
                     >
                       <Receipt size={15} /> Print / View Bill
                     </button>
@@ -245,7 +313,14 @@ const ReadyForBill: React.FC = () => {
                     <button
                       className="btn btn-success"
                       style={{ flex: 1, justifyContent: 'center', opacity: (order.status === 'waiting') ? 0.6 : 1 }}
-                      onClick={() => handleGenerateBill(order)}
+                      onClick={() => {
+                        const dispatchId = order.dispatchInfo?._id;
+                        if (!dispatchId) {
+                          handleGenerateDraftClick(order);
+                        } else {
+                          handleGenerateBill(order);
+                        }
+                      }}
                       disabled={isGenerating || order.status === 'waiting'}
                     >
                       {isGenerating ? (
@@ -269,6 +344,56 @@ const ReadyForBill: React.FC = () => {
         orderId={previewId}
         onClose={() => setPreviewId(null)}
       />
+
+      {/* Tally Bill Number Modal */}
+      {tallyModal.isOpen && (
+        <div className="modal-overlay" style={{ background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ maxWidth: 440, width: '100%', padding: '1.75rem', border: '1px solid rgba(99, 102, 241, 0.15)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', background: 'var(--card)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '1.75rem' }}>🧾</span>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>Tally Invoice Details</h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Order {tallyModal.order?.orderNumber}</span>
+                </div>
+              </div>
+              <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-dim)' }} onClick={() => setTallyModal(prev => ({ ...prev, isOpen: false }))}>✕</button>
+            </div>
+
+            <form onSubmit={handleTallySubmit}>
+              <div className="form-group" style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+                <label className="form-label" style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '0.5rem', display: 'block' }}>
+                  📑 Enter Tally Bill Number
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. TALLY-1002"
+                  value={tallyBillNoInput}
+                  onChange={(e) => setTallyBillNoInput(e.target.value)}
+                  required
+                  autoFocus
+                  style={{ width: '100%', height: 42, fontSize: '0.95rem', fontWeight: 700 }}
+                />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.4rem', display: 'block' }}>
+                  This tally bill number will be saved and printed on the invoice document.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setTallyModal(prev => ({ ...prev, isOpen: false }))}>Cancel</button>
+                <button type="submit" className="btn btn-success" disabled={savingTally} style={{ minWidth: 140, justifyContent: 'center' }}>
+                  {savingTally ? (
+                    <><Loader size={14} style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} /> Saving...</>
+                  ) : (
+                    <>Proceed to Bill ➔</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

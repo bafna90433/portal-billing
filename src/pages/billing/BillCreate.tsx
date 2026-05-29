@@ -16,6 +16,7 @@ const BillCreate: React.FC = () => {
   const [dispatch, setDispatch] = useState<any>(null);
   const [resolvedDispatchId, setResolvedDispatchId] = useState<string | null>(null);
   const [alreadyBilled, setAlreadyBilled] = useState(false);
+  const [tallyBillNumber, setTallyBillNumber] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,7 +63,11 @@ const BillCreate: React.FC = () => {
     if (!resolvedDispatchId) return toast.error('No dispatch found for this order. Dispatch the order first.');
     setCreating(true);
     try {
-      const { data } = await api.post('/billing', { orderId, dispatchId: resolvedDispatchId });
+      const { data } = await api.post('/billing', { 
+        orderId, 
+        dispatchId: resolvedDispatchId,
+        tallyBillNumber 
+      });
       toast.success(`Bill ${data.billNumber} created!`);
       addNotification({
         type: 'success',
@@ -158,6 +163,22 @@ const BillCreate: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Tally Bill Number Input */}
+          <div className="form-group" style={{ textAlign: 'left', marginBottom: '2rem' }}>
+            <label className="form-label" style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '0.5rem', display: 'block' }}>
+              📑 Enter Tally Bill Number (Optional)
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="e.g. TALLY-1002"
+              value={tallyBillNumber}
+              onChange={(e) => setTallyBillNumber(e.target.value)}
+              style={{ width: '100%', height: 42 }}
+            />
+          </div>
+
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
             <button className="btn btn-secondary" onClick={() => navigate(-1)}>Cancel</button>
             <button
