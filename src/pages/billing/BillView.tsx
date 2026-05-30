@@ -167,6 +167,21 @@ const BillView: React.FC = () => {
     </div>
   );
 
+  const totalBoxSummary = (() => {
+    let ctn = 0; let inr = 0; let loose = 0;
+    if (bill && bill.items) {
+      bill.items.forEach((item: any) => {
+        const di = dispatchItems.find((d: any) => d.sku === item.sku || d.productName === item.productName);
+        const oi = orderItems.find((o: any) => o.sku === item.sku || o.productName === item.productName);
+        ctn += item.cartonQty > 0 ? item.cartonQty : (di?.cartonQty || oi?.cartonQty || 0);
+        inr += item.innerQty > 0 ? item.innerQty : (di?.innerQty || oi?.innerQty || 0);
+        loose += item.looseQty > 0 ? item.looseQty : (di?.looseQty || oi?.looseQty || 0);
+      });
+    }
+    const customLooseBoxesCount = dispatch?.looseBoxes?.length || 0;
+    return { ctn, inr, loose, customLooseBoxesCount, totalBox: ctn + inr + customLooseBoxesCount };
+  })();
+
   return (
     <div className="page-container">
       {/* Action toolbar */}
@@ -865,6 +880,33 @@ const BillView: React.FC = () => {
               </div>
             </div>
 
+            {/* Box Summary */}
+            <div style={{
+              background: '#F8FAFC',
+              padding: '0.4rem 1rem',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              color: '#334155',
+              borderBottom: '1px solid var(--border-soft)'
+            }}>
+              {totalBoxSummary.ctn > 0 && <span style={{ color: '#8B5CF6' }}>{totalBoxSummary.ctn} CTN</span>}
+              {totalBoxSummary.inr > 0 && <span style={{ color: '#F59E0B' }}>{totalBoxSummary.inr} INR</span>}
+              {totalBoxSummary.customLooseBoxesCount > 0 && <span style={{ color: '#10B981' }}>{totalBoxSummary.customLooseBoxesCount} MIX BOX</span>}
+              <span style={{ 
+                color: '#0F172A', 
+                background: '#E2E8F0', 
+                padding: '0.1rem 0.4rem', 
+                borderRadius: '4px',
+                marginLeft: '0.5rem'
+              }}>
+                TOTAL BOX: {totalBoxSummary.totalBox}
+              </span>
+            </div>
+
             {/* Column Headers */}
             <div style={{
               padding: '0.5rem 1rem',
@@ -898,6 +940,15 @@ const BillView: React.FC = () => {
 
                 const calculatedTotal = (ctn * ipc) + (inr * ppi) + loose;
                 const finalTotal = (ctn > 0 || inr > 0 || loose > 0) ? calculatedTotal : item.qty;
+
+                const boxedQty = (dispatch?.looseBoxes || []).reduce((sum: number, box: any) => {
+                  const bItem = (box.items || []).find((bi: any) => 
+                    (bi.productId && String(bi.productId) === String(item.productId || di?.productId || oi?.productId)) ||
+                    (bi.sku && bi.sku === item.sku)
+                  );
+                  return sum + (bItem ? Number(bItem.qty || 0) : 0);
+                }, 0);
+                const displayLoose = Math.max(0, loose - boxedQty);
 
                 return (
                   <div 
@@ -964,7 +1015,7 @@ const BillView: React.FC = () => {
                         </div>
                       )}
 
-                      {loose > 0 && (
+                      {displayLoose > 0 && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           <span style={{
                             fontSize: '0.62rem',
@@ -976,7 +1027,7 @@ const BillView: React.FC = () => {
                             borderRadius: '4px',
                             whiteSpace: 'nowrap'
                           }}>
-                            {loose} loose
+                            {displayLoose} loose
                           </span>
                         </div>
                       )}
@@ -1011,6 +1062,36 @@ const BillView: React.FC = () => {
                 );
               })}
             </div>
+
+            {/* Custom Loose Boxes Display */}
+            {dispatch?.looseBoxes && dispatch.looseBoxes.length > 0 && (
+              <div style={{
+                padding: '0.75rem 1rem',
+                borderTop: '2px dashed var(--border-soft)',
+                background: '#F8FAFC'
+              }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#334155', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                  Custom Loose Boxes
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {dispatch.looseBoxes.map((box: any, i: number) => (
+                    <div key={i} style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '0.5rem' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem' }}>
+                        {box.boxName}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                        {box.items.map((item: any, j: number) => (
+                          <div key={j} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem' }}>
+                            <span style={{ color: '#475569' }}>- {item.productName?.length > 20 ? item.productName.substring(0, 20) + '...' : item.productName}</span>
+                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{item.qty} PCS</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Dark slate/blue Footer banner */}
             <div style={{
