@@ -68,6 +68,10 @@ const ReadyForBill: React.FC = () => {
   };
 
   const handlePrintViewClick = (order: any) => {
+    if (order.billInfo?.tallyBillNumber) {
+      navigate(`/billing/${order.billInfo._id}`);
+      return;
+    }
     setTallyBillNoInput(order.billInfo.tallyBillNumber || '');
     setTallyModal({
       isOpen: true,

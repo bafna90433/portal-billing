@@ -1208,11 +1208,32 @@ tbody td { padding: 0.9rem 1.15rem; vertical-align: middle; color: var(--text); 
 
 /* ===== PRINT ===== */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 0.32in !important;
+  }
   body::before { display: none !important; }
   .sidebar, .top-header, .btn, .no-print { display: none !important; }
   .main-content { margin-left: 0 !important; padding-top: 0 !important; }
-  .invoice-card { box-shadow: none !important; border: none !important; }
-  .invoice-table thead th { background: #0B0F1A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .invoice-wrapper { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  .invoice-layout-grid { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  .invoice-card { box-shadow: none !important; border: none !important; background: white !important; }
   body { background: white !important; }
   .page-container { padding: 0 !important; }
+
+  /* Compact print layout compression */
+  .invoice-main-logo { height: 95px !important; }
+  .invoice-header { padding: 1.15rem 1.5rem 0.85rem !important; }
+  .invoice-meta-cell { padding: 0.65rem 1.5rem !important; }
+  .invoice-body { padding: 0.95rem 1.5rem !important; }
+  .invoice-table { margin-bottom: 0.95rem !important; }
+  .invoice-table thead th { background: #0B0F1A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.55rem 0.75rem !important; }
+  .invoice-table tbody td { padding: 0.4rem 0.75rem !important; }
+  .invoice-totals { margin-top: 0.4rem !important; }
+  .invoice-totals-box { width: 240px !important; }
+  .invoice-total-row { padding: 0.25rem 0 !important; }
+  .invoice-total-row.grand { margin-top: 0.35rem !important; padding-top: 0.45rem !important; }
+  .invoice-signatures-grid { min-height: 55px !important; }
+  .invoice-brand-logos-footer { padding: 0.4rem 0 !important; gap: 0.5rem !important; margin-top: 0.4rem !important; }
+  .invoice-brand-logo-img { height: 35px !important; }
 }

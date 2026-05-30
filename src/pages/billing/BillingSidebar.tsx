@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Wallet, LogOut, LayoutDashboard, Truck, Receipt, Users, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { Wallet, LogOut, LayoutDashboard, Truck, Receipt, Users, ArrowLeft, Image as ImageIcon, Bell } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import { getPortalConfig } from '../../utils/portalConfig';
 
@@ -13,7 +14,7 @@ interface BillingSidebarProps {
 const menuItems = [
   { to: '/billing/dashboard', icon: <LayoutDashboard size={17} />, label: 'Dashboard' },
   { to: '/billing/ready', icon: <Truck size={17} />, label: 'Ready for Bill' },
-  { to: '/billing/generated', icon: <Receipt size={17} />, label: 'Generated Bills' },
+  { to: '/billing/generated', icon: <Receipt size={17} />, label: 'Invoice Records' },
   { to: '/billing/fulfillment', icon: <Users size={17} />, label: 'Customer Fulfillment' },
 ];
 
@@ -22,6 +23,28 @@ const BillingSidebar: React.FC<BillingSidebarProps> = ({ open, onClose }) => {
   const navigate = useNavigate();
   const portal = getPortalConfig();
   const accentGradient = `linear-gradient(135deg, ${portal.gradientFrom}, ${portal.gradientTo})`;
+
+  const [pendingBillCount, setPendingBillCount] = useState(0);
+
+  const fetchPendingBills = useCallback(async () => {
+    try {
+      const { data } = await api.get('/billing');
+      if (Array.isArray(data)) {
+        const pending = data.filter((b: any) => !b.isSubmitted).length;
+        setPendingBillCount(pending);
+      }
+    } catch (err) {
+      console.error('Failed to fetch billing count in sidebar', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'billing') {
+      fetchPendingBills();
+      const interval = setInterval(fetchPendingBills, 15000); // Poll every 15s for instant updates
+      return () => clearInterval(interval);
+    }
+  }, [user, fetchPendingBills]);
 
   const handleLogout = () => {
     logout();
@@ -68,6 +91,25 @@ const BillingSidebar: React.FC<BillingSidebarProps> = ({ open, onClose }) => {
             >
               <span className="nav-icon">{item.icon}</span>
               <span style={{ flex: 1 }}>{item.label}</span>
+              {item.to === '/billing/generated' && pendingBillCount > 0 && (
+                <span className="blinking-bell-badge" style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '0.25rem',
+                  padding: '2px 8px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '12px',
+                  color: '#EF4444',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  marginLeft: 'auto',
+                  animation: 'sidebar-bell-blink 1.5s infinite ease-in-out'
+                }}>
+                  <Bell size={12} style={{ animation: 'sidebar-bell-ring 1s infinite', flexShrink: 0 }} />
+                  <span>{pendingBillCount}</span>
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -94,6 +136,17 @@ const BillingSidebar: React.FC<BillingSidebarProps> = ({ open, onClose }) => {
             <LogOut size={15} /> Sign Out
           </button>
         </div>
+        <style>{`
+          @keyframes sidebar-bell-blink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.95); }
+          }
+          @keyframes sidebar-bell-ring {
+            0%, 100% { transform: rotate(0); }
+            20%, 60% { transform: rotate(15deg); }
+            40%, 80% { transform: rotate(-15deg); }
+          }
+        `}</style>
       </aside>
     </>
   );

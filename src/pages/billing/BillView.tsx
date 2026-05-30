@@ -17,6 +17,7 @@ const BillView: React.FC = () => {
   const [dispatchItems, setDispatchItems] = useState<any[]>([]);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [paperImageUrl, setPaperImageUrl] = useState<string | null>(null);
+  const [dispatch, setDispatch] = useState<any>(null);
   const [imageZoomed, setImageZoomed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [payModal, setPayModal] = useState(false);
@@ -28,6 +29,25 @@ const BillView: React.FC = () => {
   const [tallyBillNoInput, setTallyBillNoInput] = useState('');
   const [savingTally, setSavingTally] = useState(false);
   const [settings, setSettings] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitBill = async () => {
+    setSubmitting(true);
+    try {
+      const { data } = await api.patch(`/billing/${billId}/submit`);
+      setBill(data);
+      toast.success('Invoice submitted to records successfully!');
+      addNotification({
+        type: 'success',
+        title: 'Invoice Submitted',
+        message: `${data.billNumber} has been finalized & recorded.`,
+      });
+    } catch {
+      toast.error('Failed to submit invoice');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const getDeclaration = () => {
     const terms = settings?.payment_terms?.value;
@@ -64,6 +84,7 @@ const BillView: React.FC = () => {
           if (order?.customerAddress) setCustomerAddress(order.customerAddress);
           if (order?.items?.length) setOrderItems(order.items);
           if (dispatch?.items?.length) setDispatchItems(dispatch.items);
+          if (dispatch) setDispatch(dispatch);
           setOrderExtra({
             salesmanName: order?.salesmanName || null,
             customerType: order?.customerType || null,
@@ -147,7 +168,43 @@ const BillView: React.FC = () => {
         <button className="btn btn-secondary" onClick={() => navigate(-1)}>
           <ArrowLeft size={16} /> Back
         </button>
-        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {!bill.isSubmitted ? (
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSubmitBill} 
+              disabled={submitting} 
+              style={{ 
+                background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', 
+                border: 'none', 
+                color: '#fff', 
+                fontWeight: 800,
+                boxShadow: '0 4px 12px rgba(99,102,241,0.25)' 
+              }} 
+              id="submit-record-btn"
+            >
+              {submitting ? (
+                <><Loader size={15} style={{ animation: 'spin 1s linear infinite', marginRight: 4 }} /> Submitting...</>
+              ) : (
+                <>🚀 Complete Submit</>
+              )}
+            </button>
+          ) : (
+            <span style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '0.35rem', 
+              fontSize: '0.8rem', 
+              fontWeight: 800, 
+              color: '#10B981', 
+              background: 'rgba(16,185,129,0.08)', 
+              border: '1px solid rgba(16,185,129,0.25)', 
+              padding: '0.4rem 0.8rem', 
+              borderRadius: '8px' 
+            }}>
+              ✓ Finalized Record
+            </span>
+          )}
           <button className="btn btn-secondary" onClick={() => setEditTallyModal(true)} style={{ color: '#6366F1', borderColor: '#C7D2FE' }} id="edit-tally-btn">
             📑 Tally No: {bill.tallyBillNumber || 'Add'}
           </button>
@@ -173,11 +230,85 @@ const BillView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main layout: invoice + optional paper reference panel */}
-      <div className={`invoice-layout-grid ${paperImageUrl ? 'has-paper-slip' : ''}`}>
+      {/* Complete Submit Alert Banners */}
+      {!bill.isSubmitted ? (
+        <div className="no-print" style={{ 
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06))', 
+          border: '1px solid rgba(99,102,241,0.25)', 
+          borderRadius: 'var(--radius)', 
+          padding: '1.25rem 1.5rem', 
+          marginBottom: '1.5rem', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          gap: '1.5rem',
+          boxShadow: '0 10px 15px -3px rgba(99,102,241,0.05)',
+          textAlign: 'left'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '2rem' }}>📋</span>
+            <div>
+              <div style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1.05rem', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
+                Invoice Pending Submit — Save to Records
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                This invoice is currently in a pending state. Submit it to permanently save it to your generated records.
+              </div>
+            </div>
+          </div>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleSubmitBill} 
+            disabled={submitting} 
+            style={{ 
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', 
+              border: 'none', 
+              color: '#fff', 
+              fontWeight: 800,
+              padding: '0.65rem 1.5rem',
+              boxShadow: '0 8px 20px -6px rgba(99,102,241,0.4)',
+              cursor: 'pointer'
+            }}
+          >
+            {submitting ? (
+              <><Loader size={16} style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} /> Finalizing...</>
+            ) : (
+              <>🚀 Complete Submit</>
+            )}
+          </button>
+        </div>
+      ) : (
+        <div className="no-print" style={{ 
+          background: 'rgba(16,185,129,0.04)', 
+          border: '1px solid rgba(16,185,129,0.25)', 
+          borderRadius: 'var(--radius)', 
+          padding: '1rem 1.25rem', 
+          marginBottom: '1.5rem', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.75rem',
+          color: '#10B981',
+          fontWeight: 700,
+          fontSize: '0.9rem',
+          textAlign: 'left'
+        }}>
+          <span style={{ fontSize: '1.15rem' }}>✓</span>
+          <span>This invoice is fully finalized and recorded in the database.</span>
+        </div>
+      )}
+
+      {/* Main layout: invoice + optional reference panels column */}
+      <div 
+        className={`invoice-layout-grid ${(paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) ? 'has-paper-slip' : ''}`}
+        style={{
+          gridTemplateColumns: (paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) ? '1fr 310px' : '1fr',
+          maxWidth: (paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) ? '1450px' : '820px',
+          gap: '1.5rem'
+        }}
+      >
 
       {/* Invoice Card */}
-      <div className="invoice-wrapper" style={{ maxWidth: 'none' }}>
+      <div className="invoice-wrapper" style={{ maxWidth: (paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) ? 'none' : '1100px', margin: '0 auto' }}>
         <div className="invoice-card">
           {/* Rainbow top bar */}
           <div className="invoice-top-bar" />
@@ -186,6 +317,7 @@ const BillView: React.FC = () => {
           <div className="invoice-header">
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem' }}>
               <img 
+                className="invoice-main-logo"
                 src="https://ik.imagekit.io/rishii/stock-management/tap/Jet%202916%20_%2004.webp" 
                 alt="BAFNA TOYS Logo" 
                 style={{ height: 140, objectFit: 'contain' }} 
@@ -358,7 +490,9 @@ const BillView: React.FC = () => {
                   return (
                     <tr key={i}>
                       <td style={{ color: 'var(--text-dim)', fontWeight: 500 }}>{i + 1}</td>
-                      <td className="col-product" style={{ fontWeight: 600 }}>{item.productName}</td>
+                      <td className="col-product" style={{ fontWeight: 600 }} title={item.productName}>
+                        {item.productName.length > 20 ? `${item.productName.slice(0, 20)}...` : item.productName}
+                      </td>
                       <td style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{item.sku}</td>
                       <td>
                         <span style={{
@@ -501,7 +635,7 @@ const BillView: React.FC = () => {
             </div>
 
             {/* Signatures */}
-            <div style={{ 
+            <div className="invoice-signatures-grid" style={{ 
               display: 'grid', 
               gridTemplateColumns: '1.2fr 1fr', 
               borderBottom: '1.5px solid #000', 
@@ -550,7 +684,7 @@ const BillView: React.FC = () => {
             </div>
 
             {/* The 8 brand logos footer row */}
-            <div style={{ 
+            <div className="invoice-brand-logos-footer" style={{ 
               padding: '1.25rem 0.5rem', 
               display: 'flex', 
               justifyContent: 'center', 
@@ -579,6 +713,7 @@ const BillView: React.FC = () => {
                 
                 return (
                   <img 
+                    className="invoice-brand-logo-img"
                     key={idx} 
                     src={logoUrl} 
                     alt={`Brand Logo ${idx + 1}`} 
@@ -595,51 +730,311 @@ const BillView: React.FC = () => {
         </div>
       </div>
 
-      {/* Paper Order Reference Panel — second column of the outer grid */}
-      {paperImageUrl && (
-        <div className="no-print" style={{ position: 'sticky', top: 'calc(var(--header-height) + 1rem)', maxWidth: '250px', width: '100%', justifySelf: 'center' }}>
+      {/* Stacked Reference Panels Column — second column of the outer grid */}
+      {(paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) && (
+        <div 
+          className="no-print" 
+          style={{ 
+            position: 'sticky', 
+            top: 'calc(var(--header-height) + 1rem)', 
+            maxWidth: '310px', 
+            width: '100%', 
+            justifySelf: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            alignSelf: 'start'
+          }}
+        >
+          {/* Panel 1: Paper Order Slip (if present) */}
+          {paperImageUrl && (
+            <div style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow)',
+            }}>
+              <div style={{
+                padding: '0.85rem 1rem',
+                borderBottom: '1px solid var(--border)',
+                background: 'var(--bg3)',
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+              }}>
+                <FileText size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                <div style={{ flex: 1, textAlign: 'left' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>Paper Order Slip</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Reference for product matching</div>
+                </div>
+                <button
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', padding: '2px' }}
+                  onClick={() => setImageZoomed(true)}
+                  title="View full size"
+                >
+                  <ZoomIn size={15} />
+                </button>
+              </div>
+              <div style={{ cursor: 'zoom-in', background: '#111', lineHeight: 0 }} onClick={() => setImageZoomed(true)}>
+                <img
+                  src={paperImageUrl}
+                  alt="Paper Order Slip"
+                  style={{ width: '100%', maxHeight: '240px', objectFit: 'contain', display: 'block' }}
+                />
+              </div>
+              <div style={{ padding: '0.65rem 1rem', fontSize: '0.7rem', color: 'var(--text-dim)', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
+                Click image to zoom • Use for verification
+              </div>
+            </div>
+          )}
+
+          {/* Panel 2: High-Fidelity Dispatch Slip Panel */}
           <div style={{
             background: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius)',
             overflow: 'hidden',
             boxShadow: 'var(--shadow)',
+            display: 'flex',
+            flexDirection: 'column',
+            textAlign: 'left'
           }}>
+            {/* Header with View Invoice Button */}
             <div style={{
               padding: '0.85rem 1rem',
               borderBottom: '1px solid var(--border)',
-              background: 'var(--bg3)',
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'var(--card)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.5rem',
             }}>
-              <FileText size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>Paper Order Slip</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Reference for product matching</div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span>📋</span> Dispatch Slip
               </div>
               <button
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', padding: '2px' }}
-                onClick={() => setImageZoomed(true)}
-                title="View full size"
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  const invoiceEl = document.querySelector('.invoice-card');
+                  if (invoiceEl) {
+                    invoiceEl.scrollIntoView({ behavior: 'smooth' });
+                    // Visual highlight animation
+                    invoiceEl.setAttribute('style', 'box-shadow: 0 0 0 4px var(--primary-light); transition: box-shadow 0.3s ease;');
+                    setTimeout(() => {
+                      invoiceEl.setAttribute('style', '');
+                    }, 1500);
+                  }
+                  toast.success('Viewing main tax invoice!');
+                }}
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '0.3rem 0.6rem',
+                  borderColor: 'var(--primary-light)',
+                  color: 'var(--primary)',
+                  fontWeight: 700,
+                  background: 'var(--primary-50)'
+                }}
               >
-                <ZoomIn size={15} />
+                View Invoice
               </button>
             </div>
-            <div style={{ cursor: 'zoom-in', background: '#111', lineHeight: 0 }} onClick={() => setImageZoomed(true)}>
-              <img
-                src={paperImageUrl}
-                alt="Paper Order Slip"
-                style={{ width: '100%', maxHeight: '480px', objectFit: 'contain', display: 'block' }}
-              />
-            </div>
-            <div style={{ padding: '0.65rem 1rem', fontSize: '0.7rem', color: 'var(--text-dim)', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
-              Click image to zoom • Use for product verification
-              {orderExtra?.receivedAt && (
-                <div style={{ marginTop: '0.35rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                  Slip Received: {new Date(orderExtra.receivedAt).toLocaleString('en-IN', {
-                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                  })}
+
+            {/* Dark slate/blue Header banner */}
+            <div style={{
+              background: '#0F172A',
+              padding: '0.75rem 1rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              color: '#fff',
+              fontFamily: 'sans-serif'
+            }}>
+              <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#38BDF8' }}>
+                {bill.orderNumber}
+              </div>
+              <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff' }}>
+                  {dispatch?.verifiedByName || orderExtra?.salesmanName || 'rishi'}
                 </div>
-              )}
+                <div style={{ fontSize: '0.62rem', color: '#94A3B8' }}>via MD</div>
+              </div>
+            </div>
+
+            {/* Column Headers */}
+            <div style={{
+              padding: '0.5rem 1rem',
+              borderBottom: '1px solid var(--border-soft)',
+              background: 'var(--bg3)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              <span style={{ width: '45%' }}>Item</span>
+              <span style={{ width: '38%', textAlign: 'center' }}>Unit Breakdown</span>
+              <span style={{ width: '17%', textAlign: 'right' }}>Pcs</span>
+            </div>
+
+            {/* Product breakdown list */}
+            <div style={{ padding: '0.5rem 0', display: 'flex', flexDirection: 'column', maxHeight: '420px', overflowY: 'auto' }}>
+              {bill.items.map((item: any, i: number) => {
+                const di = dispatchItems.find((d: any) => d.sku === item.sku || d.productName === item.productName);
+                const oi = orderItems.find((o: any) => o.sku === item.sku || o.productName === item.productName);
+                
+                const ctn = item.cartonQty > 0 ? item.cartonQty : (di?.cartonQty || oi?.cartonQty || 0);
+                const inr = item.innerQty > 0 ? item.innerQty : (di?.innerQty || oi?.innerQty || 0);
+                const loose = item.looseQty > 0 ? item.looseQty : (di?.looseQty || oi?.looseQty || 0);
+
+                const ipc = item.innerPerCarton > 0 ? item.innerPerCarton : (di?.innerPerCarton || oi?.innerPerCarton || 0);
+                const ppi = item.pcsPerInner > 0 ? item.pcsPerInner : (di?.pcsPerInner || oi?.pcsPerInner || 0);
+
+                const calculatedTotal = (ctn * ipc) + (inr * ppi) + loose;
+                const finalTotal = (ctn > 0 || inr > 0 || loose > 0) ? calculatedTotal : item.qty;
+
+                return (
+                  <div 
+                    key={i} 
+                    style={{
+                      padding: '0.75rem 1.0rem',
+                      borderBottom: '1px solid var(--border-soft)',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '0.5rem',
+                      fontFamily: 'sans-serif'
+                    }}
+                  >
+                    {/* Item Info */}
+                    <div style={{ width: '45%', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3, wordBreak: 'break-word' }} title={item.productName}>
+                        {item.productName.length > 20 ? `${item.productName.slice(0, 20)}...` : item.productName}
+                      </div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                        {item.sku}
+                      </div>
+                    </div>
+
+                    {/* Unit Breakdown */}
+                    <div style={{ width: '42%', display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' }}>
+                      {ctn > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
+                          <span style={{
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            color: 'hsl(262, 80%, 45%)',
+                            background: 'hsl(262, 80%, 96%)',
+                            border: '1px solid hsl(262, 80%, 90%)',
+                            padding: '0.1rem 0.35rem',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {ctn} CTN
+                          </span>
+                          <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
+                            × {ipc} = <strong style={{ color: 'var(--text)' }}>{ctn * ipc}</strong>
+                          </span>
+                        </div>
+                      )}
+
+                      {inr > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
+                          <span style={{
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            color: 'hsl(199, 85%, 40%)',
+                            background: 'hsl(199, 85%, 96%)',
+                            border: '1px solid hsl(199, 85%, 90%)',
+                            padding: '0.1rem 0.35rem',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {inr} INR
+                          </span>
+                          <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
+                            × {ppi} = <strong style={{ color: 'var(--text)' }}>{inr * ppi}</strong>
+                          </span>
+                        </div>
+                      )}
+
+                      {loose > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <span style={{
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            color: 'hsl(142, 70%, 30%)',
+                            background: 'hsl(142, 70%, 96%)',
+                            border: '1px solid hsl(142, 70%, 90%)',
+                            padding: '0.1rem 0.35rem',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {loose} loose
+                          </span>
+                        </div>
+                      )}
+
+                      {!(ctn > 0 || inr > 0 || loose > 0) && (
+                        <span style={{
+                          fontSize: '0.62rem',
+                          fontWeight: 700,
+                          color: 'var(--text-dim)',
+                          background: 'var(--bg3)',
+                          border: '1px solid var(--border)',
+                          padding: '0.1rem 0.35rem',
+                          borderRadius: '4px'
+                        }}>
+                          {item.qty} PCS
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Total Pcs on right */}
+                    <div style={{ width: '13%', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text)' }}>
+                        {finalTotal}
+                      </div>
+                      <div style={{ fontSize: '0.58rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                        PCS
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Dark slate/blue Footer banner */}
+            <div style={{
+              background: '#0F172A',
+              padding: '0.75rem 1rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              color: '#fff',
+              fontFamily: 'sans-serif'
+            }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>
+                {bill.items.length} items
+              </div>
+              <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#fff', letterSpacing: '0.02em' }}>
+                TOTAL: {
+                  bill.items.reduce((acc: number, item: any) => {
+                    const di = dispatchItems.find((d: any) => d.sku === item.sku || d.productName === item.productName);
+                    const oi = orderItems.find((o: any) => o.sku === item.sku || o.productName === item.productName);
+                    
+                    const ctn = item.cartonQty > 0 ? item.cartonQty : (di?.cartonQty || oi?.cartonQty || 0);
+                    const inr = item.innerQty > 0 ? item.innerQty : (di?.innerQty || oi?.innerQty || 0);
+                    const loose = item.looseQty > 0 ? item.looseQty : (di?.looseQty || oi?.looseQty || 0);
+
+                    const ipc = item.innerPerCarton > 0 ? item.innerPerCarton : (di?.innerPerCarton || oi?.innerPerCarton || 0);
+                    const ppi = item.pcsPerInner > 0 ? item.pcsPerInner : (di?.pcsPerInner || oi?.pcsPerInner || 0);
+
+                    const calculatedTotal = (ctn * ipc) + (inr * ppi) + loose;
+                    return acc + ((ctn > 0 || inr > 0 || loose > 0) ? calculatedTotal : item.qty);
+                  }, 0)
+                } PCS
+              </div>
             </div>
           </div>
         </div>
@@ -754,8 +1149,8 @@ const BillView: React.FC = () => {
                 setBill(data);
                 setEditTallyModal(false);
                 toast.success('Tally Bill Number updated!');
-              } catch {
-                toast.error('Failed to update Tally Bill Number');
+              } catch (err: any) {
+                toast.error(err.response?.data?.message || 'Failed to update Tally Bill Number');
               } finally {
                 setSavingTally(false);
               }
