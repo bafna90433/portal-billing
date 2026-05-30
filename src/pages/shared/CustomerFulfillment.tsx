@@ -74,7 +74,7 @@ const CustomerFulfillment: React.FC = () => {
   const getCustomerStatus = (report: CustomerReport): 'complete' | 'partial' | 'pending' => {
     const sent = report.products.reduce((a, p) => a + p.qtyDispatched, 0);
     const pending = report.products.reduce((a, p) => a + p.qtyPending, 0);
-    if (pending === 0) return 'complete';
+    if (pending <= 0) return 'complete';
     if (sent > 0) return 'partial';
     return 'pending';
   };
@@ -358,7 +358,7 @@ const CustomerFulfillment: React.FC = () => {
                                       <td style={{ padding: '0.8rem 1.15rem', textAlign: 'center', color: '#047857', fontWeight: 700, fontFamily: 'var(--font-display)' }}>{product.qtyDispatched}</td>
                                       <td style={{ padding: '0.8rem 1.15rem', textAlign: 'center', color: product.qtyPending > 0 ? '#B91C1C' : 'var(--text-dim)', fontWeight: 700, fontFamily: 'var(--font-display)' }}>{product.qtyPending}</td>
                                       <td style={{ padding: '0.8rem 1.15rem', textAlign: 'center' }}>
-                                        {product.qtyPending === 0 ? (
+                                        {product.qtyPending <= 0 ? (
                                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.68rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', background: 'rgba(16,185,129,0.1)', padding: '0.22rem 0.65rem', borderRadius: 99 }}>
                                             <CheckCircle2 size={11} /> Done
                                           </span>

@@ -32,6 +32,10 @@ const BillView: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmitBill = async () => {
+    if (orderExtra?.status && !['dispatched', 'billed', 'paid'].includes(orderExtra.status)) {
+      toast.error('Complete Submit locked! FinalCheck is pending.');
+      return;
+    }
     setSubmitting(true);
     try {
       const { data } = await api.patch(`/billing/${billId}/submit`);
@@ -42,8 +46,8 @@ const BillView: React.FC = () => {
         title: 'Invoice Submitted',
         message: `${data.billNumber} has been finalized & recorded.`,
       });
-    } catch {
-      toast.error('Failed to submit invoice');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to submit invoice');
     } finally {
       setSubmitting(false);
     }
@@ -91,6 +95,8 @@ const BillView: React.FC = () => {
             transportName: dispatch?.transportName || null,
             lrNumber: dispatch?.lrNumber || null,
             receivedAt: order?.receivedAt || null,
+            status: order?.status || null,
+            stickerQty: order?.stickerQty || 0,
           });
 
           if (order?.paperOrderImageUrl) {
@@ -186,7 +192,7 @@ const BillView: React.FC = () => {
               {submitting ? (
                 <><Loader size={15} style={{ animation: 'spin 1s linear infinite', marginRight: 4 }} /> Submitting...</>
               ) : (
-                <>🚀 Complete Submit</>
+                <>{orderExtra?.status && !['dispatched', 'billed', 'paid'].includes(orderExtra.status) ? '🔒 FinalCheck Pending' : '🚀 Complete Submit'}</>
               )}
             </button>
           ) : (
@@ -273,7 +279,7 @@ const BillView: React.FC = () => {
             {submitting ? (
               <><Loader size={16} style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} /> Finalizing...</>
             ) : (
-              <>🚀 Complete Submit</>
+              <>{orderExtra?.status && !['dispatched', 'billed', 'paid'].includes(orderExtra.status) ? '🔒 Complete Submit (Locked)' : '🚀 Complete Submit'}</>
             )}
           </button>
         </div>
@@ -975,6 +981,8 @@ const BillView: React.FC = () => {
                         </div>
                       )}
 
+
+
                       {!(ctn > 0 || inr > 0 || loose > 0) && (
                         <span style={{
                           fontSize: '0.62rem',
@@ -1014,8 +1022,21 @@ const BillView: React.FC = () => {
               color: '#fff',
               fontFamily: 'sans-serif'
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>
-                {bill.items.length} items
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>
+                  {bill.items.length} items
+                </div>
+                <div style={{ 
+                  fontSize: '0.65rem', 
+                  fontWeight: 800, 
+                  color: '#fff', 
+                  background: 'hsl(20, 80%, 55%)',
+                  padding: '0.15rem 0.4rem',
+                  borderRadius: '4px',
+                  textTransform: 'uppercase'
+                }}>
+                  {dispatch?.stickerQty || orderExtra?.stickerQty || 0} Stickers
+                </div>
               </div>
               <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#fff', letterSpacing: '0.02em' }}>
                 TOTAL: {
