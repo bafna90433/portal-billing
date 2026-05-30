@@ -96,7 +96,7 @@ const BillView: React.FC = () => {
             lrNumber: dispatch?.lrNumber || null,
             receivedAt: order?.receivedAt || null,
             status: order?.status || null,
-            stickerQty: order?.stickerQty || 0,
+            stickerQty: order?.items?.[0]?.stickerQty || 0,
           });
 
           if (order?.paperOrderImageUrl) {
@@ -1035,7 +1035,7 @@ const BillView: React.FC = () => {
                   borderRadius: '4px',
                   textTransform: 'uppercase'
                 }}>
-                  {dispatch?.stickerQty || orderExtra?.stickerQty || 0} Stickers
+                  {dispatch?.items?.[0]?.stickerQty || orderExtra?.stickerQty || 0} Stickers
                 </div>
               </div>
               <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#fff', letterSpacing: '0.02em' }}>
