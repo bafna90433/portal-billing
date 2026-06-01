@@ -511,7 +511,7 @@ const VExpressLogistics: React.FC = () => {
                         {/* Timeline line */}
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20 }}>
                           <div style={{ width: 10, height: 10, borderRadius: '50%', background: i === 0 ? '#10B981' : 'var(--border)', flexShrink: 0, marginTop: 5 }} />
-                          {i < (trackingModal.data.events?.length || 0) - 1 && <div style={{ width: 2, flex: 1, background: 'var(--border)' }} />}
+                          {i < (trackingModal.data?.events?.length || 0) - 1 && <div style={{ width: 2, flex: 1, background: 'var(--border)' }} />}
                         </div>
                         <div style={{ paddingBottom: '1.25rem', flex: 1 }}>
                           <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{evt.description || evt.event_type || 'Event'}</div>
