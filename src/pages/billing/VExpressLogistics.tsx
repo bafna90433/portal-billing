@@ -82,12 +82,17 @@ const VExpressLogistics: React.FC = () => {
   const fetchConsignments = useCallback(async () => {
     setListLoading(true);
     try {
-      const { data } = await api.post('/vxpress/list', {});
+      const { data } = await api.post('/vxpress/list', {}, { timeout: 25000 });
       const lrs = data?.lrs || data?.lr || [];
       setConsignments(Array.isArray(lrs) ? lrs : [lrs]);
     } catch (err: any) {
       console.error('Failed to fetch consignments:', err);
-      toast.error('V-Xpress se data load nahi hua');
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        toast.error('V-Xpress server slow hai, thodi der baad try karo');
+      } else {
+        toast.error('V-Xpress se data load nahi hua');
+      }
+      setConsignments([]);
     } finally {
       setListLoading(false);
     }
