@@ -51,6 +51,12 @@ const VExpressLogistics: React.FC = () => {
   // Cancel Modal
   const [cancelModal, setCancelModal] = useState<{ open: boolean; loading: boolean; consignment: Consignment | null }>({ open: false, loading: false, consignment: null });
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
+  const totalPages = Math.ceil(consignments.length / ITEMS_PER_PAGE);
+  const paginatedConsignments = consignments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   // Form
   const [formData, setFormData] = useState({
     consignee_company_name: '',
@@ -78,13 +84,17 @@ const VExpressLogistics: React.FC = () => {
     invoice_number: '', invoice_value: '',
   });
 
-  // ─── Fetch Consignment List (Real API) ──────────────────
+  // ─── Fetch Consignment List (Real API — all pages) ───────
   const fetchConsignments = useCallback(async () => {
     setListLoading(true);
+    setCurrentPage(1);
     try {
-      const { data } = await api.post('/vxpress/list', {}, { timeout: 25000 });
+      const { data } = await api.post('/vxpress/list', {}, { timeout: 120000 });
       const lrs = data?.lrs || data?.lr || [];
       setConsignments(Array.isArray(lrs) ? lrs : [lrs]);
+      if (data?.total) {
+        toast.success(`${data.total} consignments loaded!`);
+      }
     } catch (err: any) {
       console.error('Failed to fetch consignments:', err);
       if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
@@ -404,7 +414,7 @@ const VExpressLogistics: React.FC = () => {
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              {consignments.length > 0 ? `${consignments.length} consignment(s) found from V-Xpress` : 'Loading data from V-Xpress...'}
+              {consignments.length > 0 ? `${consignments.length} consignment(s) — Page ${currentPage} of ${totalPages} (showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, consignments.length)})` : 'Loading data from V-Xpress...'}
             </div>
             <button className="btn btn-secondary" onClick={fetchConsignments} disabled={listLoading} style={{ fontSize: '0.8rem' }}>
               <RefreshCw size={14} style={listLoading ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
@@ -431,7 +441,7 @@ const VExpressLogistics: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {consignments.map((c, idx) => {
+                    {paginatedConsignments.map((c, idx) => {
                       const st = getStatusStyle(c.readable_status || c.tracking_status);
                       return (
                         <tr key={c.id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}
@@ -475,6 +485,43 @@ const VExpressLogistics: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.35rem', padding: '1rem', borderTop: '1px solid var(--border)' }}>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', borderRadius: '6px' }}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    ← Prev
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      className="btn"
+                      style={{
+                        padding: '0.4rem 0.7rem', fontSize: '0.8rem', borderRadius: '6px', minWidth: 36, justifyContent: 'center',
+                        background: page === currentPage ? 'var(--primary)' : 'transparent',
+                        color: page === currentPage ? 'white' : 'var(--text-muted)',
+                        border: page === currentPage ? 'none' : '1px solid var(--border)',
+                        fontWeight: page === currentPage ? 700 : 500,
+                      }}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', borderRadius: '6px' }}
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </>
