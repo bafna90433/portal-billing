@@ -322,7 +322,7 @@ const BillView: React.FC = () => {
       <div 
         className={`invoice-layout-grid ${(paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) ? 'has-paper-slip' : ''}`}
         style={{
-          gridTemplateColumns: (paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) ? '1fr 310px' : '1fr',
+          gridTemplateColumns: (paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) ? '1fr 450px' : '1fr',
           maxWidth: (paperImageUrl || dispatchItems.length > 0 || (bill && bill.items?.length > 0)) ? '1450px' : '820px',
           gap: '1.5rem'
         }}
@@ -758,7 +758,7 @@ const BillView: React.FC = () => {
           style={{ 
             position: 'sticky', 
             top: 'calc(var(--header-height) + 1rem)', 
-            maxWidth: '310px', 
+            maxWidth: '450px', 
             width: '100%', 
             justifySelf: 'center',
             display: 'flex',
@@ -907,26 +907,16 @@ const BillView: React.FC = () => {
               </span>
             </div>
 
-            {/* Column Headers */}
-            <div style={{
-              padding: '0.5rem 1rem',
-              borderBottom: '1px solid var(--border-soft)',
-              background: 'var(--bg3)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '0.68rem',
-              fontWeight: 700,
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+            {/* Product breakdown list (2-Column Grid) */}
+            <div style={{ 
+              padding: '0.75rem 1rem', 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '0.75rem', 
+              maxHeight: '480px', 
+              overflowY: 'auto',
+              background: '#F8FAFC'
             }}>
-              <span style={{ width: '45%' }}>Item</span>
-              <span style={{ width: '38%', textAlign: 'center' }}>Unit Breakdown</span>
-              <span style={{ width: '17%', textAlign: 'right' }}>Pcs</span>
-            </div>
-
-            {/* Product breakdown list */}
-            <div style={{ padding: '0.5rem 0', display: 'flex', flexDirection: 'column', maxHeight: '420px', overflowY: 'auto' }}>
               {bill.items.map((item: any, i: number) => {
                 const di = dispatchItems.find((d: any) => d.sku === item.sku || d.productName === item.productName);
                 const oi = orderItems.find((o: any) => o.sku === item.sku || o.productName === item.productName);
@@ -954,109 +944,94 @@ const BillView: React.FC = () => {
                   <div 
                     key={i} 
                     style={{
-                      padding: '0.75rem 1.0rem',
-                      borderBottom: '1px solid var(--border-soft)',
+                      background: '#fff',
+                      border: '1px solid var(--border-soft)',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
                       display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
-                      gap: '0.5rem',
-                      fontFamily: 'sans-serif'
+                      flexDirection: 'column',
+                      fontFamily: 'sans-serif',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
                     }}
                   >
-                    {/* Item Info */}
-                    <div style={{ width: '45%', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3, wordBreak: 'break-word' }} title={item.productName}>
-                        {item.productName.length > 20 ? `${item.productName.slice(0, 20)}...` : item.productName}
-                      </div>
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                        {item.sku}
-                      </div>
+                    {/* Top: Large Image */}
+                    <div style={{ width: '100%', height: '140px', background: '#fff', borderBottom: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      {(item.imageUrl || di?.imageUrl || oi?.imageUrl) ? (
+                        <img src={item.imageUrl || di?.imageUrl || oi?.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>No Image</div>
+                      )}
                     </div>
+                    
+                    {/* Bottom: Details */}
+                    <div style={{ padding: '0.65rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                        <div style={{ 
+                          fontSize: '0.72rem', 
+                          fontWeight: 700, 
+                          color: 'var(--text)', 
+                          lineHeight: 1.25,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          wordBreak: 'break-word',
+                          marginBottom: '2px'
+                        }} title={item.productName}>
+                          {item.productName}
+                        </div>
+                        <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '0.5rem' }}>
+                          {item.sku}
+                        </div>
 
-                    {/* Unit Breakdown */}
-                    <div style={{ width: '42%', display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' }}>
+                    {/* Middle: Unit Breakdown */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingTop: '0.4rem', borderTop: '1px dashed var(--border-soft)' }}>
                       {ctn > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{
-                            fontSize: '0.62rem',
-                            fontWeight: 800,
-                            color: 'hsl(262, 80%, 45%)',
-                            background: 'hsl(262, 80%, 96%)',
-                            border: '1px solid hsl(262, 80%, 90%)',
-                            padding: '0.1rem 0.35rem',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {ctn} CTN
-                          </span>
-                          <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
-                            × {ipc} = <strong style={{ color: 'var(--text)' }}>{ctn * ipc}</strong>
-                          </span>
+                            fontSize: '0.58rem', fontWeight: 800, color: 'hsl(262, 80%, 45%)', background: 'hsl(262, 80%, 96%)', border: '1px solid hsl(262, 80%, 90%)', padding: '0.1rem 0.3rem', borderRadius: '4px'
+                          }}>{ctn} CTN</span>
+                          <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>× {ipc} = <strong>{ctn * ipc}</strong></span>
                         </div>
                       )}
-
                       {inr > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{
-                            fontSize: '0.62rem',
-                            fontWeight: 800,
-                            color: 'hsl(199, 85%, 40%)',
-                            background: 'hsl(199, 85%, 96%)',
-                            border: '1px solid hsl(199, 85%, 90%)',
-                            padding: '0.1rem 0.35rem',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {inr} INR
-                          </span>
-                          <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
-                            × {ppi} = <strong style={{ color: 'var(--text)' }}>{inr * ppi}</strong>
-                          </span>
+                            fontSize: '0.58rem', fontWeight: 800, color: 'hsl(199, 85%, 40%)', background: 'hsl(199, 85%, 96%)', border: '1px solid hsl(199, 85%, 90%)', padding: '0.1rem 0.3rem', borderRadius: '4px'
+                          }}>{inr} INR</span>
+                          <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>× {ppi} = <strong>{inr * ppi}</strong></span>
                         </div>
                       )}
-
                       {displayLoose > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{
-                            fontSize: '0.62rem',
-                            fontWeight: 800,
-                            color: 'hsl(142, 70%, 30%)',
-                            background: 'hsl(142, 70%, 96%)',
-                            border: '1px solid hsl(142, 70%, 90%)',
-                            padding: '0.1rem 0.35rem',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {displayLoose} loose
-                          </span>
+                            fontSize: '0.58rem', fontWeight: 800, color: 'hsl(142, 70%, 30%)', background: 'hsl(142, 70%, 96%)', border: '1px solid hsl(142, 70%, 90%)', padding: '0.1rem 0.3rem', borderRadius: '4px'
+                          }}>{displayLoose} LOOSE</span>
                         </div>
                       )}
-
-
-
                       {!(ctn > 0 || inr > 0 || loose > 0) && (
-                        <span style={{
-                          fontSize: '0.62rem',
-                          fontWeight: 700,
-                          color: 'var(--text-dim)',
-                          background: 'var(--bg3)',
-                          border: '1px solid var(--border)',
-                          padding: '0.1rem 0.35rem',
-                          borderRadius: '4px'
-                        }}>
-                          {item.qty} PCS
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{
+                            fontSize: '0.58rem', fontWeight: 700, color: 'var(--text-dim)', background: 'var(--bg3)', border: '1px solid var(--border)', padding: '0.1rem 0.3rem', borderRadius: '4px'
+                          }}>QTY</span>
+                          <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}><strong>{item.qty}</strong> PCS</span>
+                        </div>
                       )}
                     </div>
 
-                    {/* Total Pcs on right */}
-                    <div style={{ width: '13%', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text)' }}>
-                        {finalTotal}
+                    {/* Bottom: Total Pcs */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      paddingTop: '0.4rem',
+                      marginTop: 'auto'
+                    }}>
+                      <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)' }}>TOTAL</span>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.15rem' }}>
+                        <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{finalTotal}</span>
+                        <span style={{ fontSize: '0.55rem', fontWeight: 700, color: 'var(--text-muted)' }}>PCS</span>
                       </div>
-                      <div style={{ fontSize: '0.58rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                        PCS
-                      </div>
+                    </div>
                     </div>
                   </div>
                 );
@@ -1073,19 +1048,27 @@ const BillView: React.FC = () => {
                 <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#334155', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
                   Custom Loose Boxes
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
                   {dispatch.looseBoxes.map((box: any, i: number) => (
                     <div key={i} style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '0.5rem' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.5rem' }}>
                         {box.boxName}
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                        {box.items.map((item: any, j: number) => (
-                          <div key={j} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem' }}>
-                            <span style={{ color: '#475569' }}>- {item.productName?.length > 20 ? item.productName.substring(0, 20) + '...' : item.productName}</span>
-                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{item.qty} PCS</span>
-                          </div>
-                        ))}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        {box.items?.map((item: any, j: number) => {
+                          const itemDetails = (bill.items || []).find((bi: any) => String(bi.productId) === String(item.productId)) || (dispatch.items || []).find((di: any) => String(di.productId) === String(item.productId));
+                          const imageUrl = itemDetails?.imageUrl || item.imageUrl;
+                          
+                          return (
+                            <div key={j} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.65rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, paddingRight: '0.2rem' }}>
+                                {imageUrl && <img src={imageUrl} alt="" style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }} />}
+                                <span style={{ color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80px' }}>{item.productName}</span>
+                              </div>
+                              <span style={{ fontWeight: 700, color: '#0F172A', flexShrink: 0 }}>{item.qty} PCS</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
