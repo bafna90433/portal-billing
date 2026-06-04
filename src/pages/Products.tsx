@@ -115,18 +115,11 @@ const Products: React.FC = () => {
                   )}
 
                   {/* Prices */}
-                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
-                    <div style={{ flex: 1, background: 'rgba(99,102,241,0.07)', borderRadius: 8, padding: '0.4rem 0.6rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.62rem', color: 'var(--text-dim)', fontWeight: 600 }}>WHOLESALE</div>
-                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: wp > 0 ? 'var(--primary)' : 'var(--text-dim)' }}>
-                        {wp > 0 ? `₹${wp.toFixed(2)}` : '—'}
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, background: 'rgba(16,185,129,0.07)', borderRadius: 8, padding: '0.4rem 0.6rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.62rem', color: 'var(--text-dim)', fontWeight: 600 }}>RETAIL</div>
-                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: rp > 0 ? 'var(--success)' : 'var(--text-dim)' }}>
-                        {rp > 0 ? `₹${rp.toFixed(2)}` : '—'}
-                      </div>
+                  {/* Wholesale Price Stretched */}
+                  <div style={{ background: 'rgba(99,102,241,0.07)', borderRadius: 8, padding: '0.5rem 0.8rem', textAlign: 'center', marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: 700, letterSpacing: '0.05em' }}>WHOLESALER PRICE</div>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: wp > 0 ? 'var(--primary)' : 'var(--text-dim)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                      {wp > 0 ? `₹${wp.toFixed(2)}` : '—'}
                     </div>
                   </div>
 

@@ -30,6 +30,7 @@ const BillView: React.FC = () => {
   const [savingTally, setSavingTally] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPackingSlip, setShowPackingSlip] = useState(false);
 
   const handleSubmitBill = async () => {
     if (orderExtra?.status && !['dispatched', 'billed', 'paid'].includes(orderExtra.status)) {
@@ -181,6 +182,18 @@ const BillView: React.FC = () => {
     const customLooseBoxesCount = dispatch?.looseBoxes?.length || 0;
     return { ctn, inr, loose, customLooseBoxesCount, totalBox: ctn + inr + customLooseBoxesCount };
   })();
+
+  const gstBreakdown = bill?.items?.reduce<Record<string, { category: string; rate: number; gstAmount: number }>>((acc, item: any) => {
+    if ((item.gstRate || 0) <= 0 || (item.gstAmount || 0) <= 0) return acc;
+    const cat = item.category || 'General';
+    const formattedCat = cat.split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    const key = `${formattedCat}_${item.gstRate}`;
+    if (!acc[key]) {
+      acc[key] = { category: formattedCat, rate: item.gstRate, gstAmount: 0 };
+    }
+    acc[key].gstAmount += item.gstAmount;
+    return acc;
+  }, {}) || {};
 
   return (
     <div className="page-container">
@@ -553,6 +566,21 @@ const BillView: React.FC = () => {
                   <span className="label">GST</span>
                   <span className="amount">₹{bill.totalGst.toFixed(2)}</span>
                 </div>
+                {Object.values(gstBreakdown).map((entry: any, idx: number) => (
+                  <div key={idx} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    fontSize: '0.78rem', 
+                    color: '#4B5563', 
+                    fontWeight: 600, 
+                    paddingLeft: '0.6rem', 
+                    borderLeft: '2px solid #E5E7EB', 
+                    margin: '2px 0' 
+                  }}>
+                    <span>{entry.category} GST {entry.rate}%</span>
+                    <span style={{ fontFamily: 'monospace' }}>₹{entry.gstAmount.toFixed(2)}</span>
+                  </div>
+                ))}
                 <div className="invoice-total-row grand">
                   <span>Grand Total</span>
                   <span className="amount">₹{bill.totalAmount.toFixed(2)}</span>

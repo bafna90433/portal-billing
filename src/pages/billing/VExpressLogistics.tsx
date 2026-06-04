@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Truck, Send, Loader, CheckCircle, Search, X, Download, XCircle, Eye, RefreshCw, Package, MapPin, Clock, FileText } from 'lucide-react';
+import { Truck, Loader, Search, X, Download, XCircle, RefreshCw, Package, MapPin, Clock, FileText, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
 
@@ -39,11 +39,8 @@ interface Consignment {
 
 // ─── Component ────────────────────────────────────────────
 const VExpressLogistics: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
-  const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
   const [consignments, setConsignments] = useState<Consignment[]>([]);
-  const [createdConsignment, setCreatedConsignment] = useState<any>(null);
 
   // Tracking Modal
   const [trackingModal, setTrackingModal] = useState<{ open: boolean; loading: boolean; data: Consignment | null }>({ open: false, loading: false, data: null });
@@ -51,54 +48,80 @@ const VExpressLogistics: React.FC = () => {
   // Cancel Modal
   const [cancelModal, setCancelModal] = useState<{ open: boolean; loading: boolean; consignment: Consignment | null }>({ open: false, loading: false, consignment: null });
 
-  // Pagination
+  // Pagination & Load More
   const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextLastId, setNextLastId] = useState<number | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const ITEMS_PER_PAGE = 50;
-  const totalPages = Math.ceil(consignments.length / ITEMS_PER_PAGE);
-  const paginatedConsignments = consignments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  // Form
-  const [formData, setFormData] = useState({
-    consignee_company_name: '',
-    consignee_address_line1: '',
-    consignee_address_line2: '',
-    consignee_city: '',
-    consignee_state: '',
-    consignee_pin: '',
-    consignee_contact_name: '',
-    consignee_phone: '',
-    weight: '10',
-    units: '1',
-    invoice_number: '',
-    invoice_value: '',
+  // Filters
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  // Apply filters → then paginate
+  const filteredConsignments = consignments.filter(c => {
+    // Text search (docket or consignee)
+    if (searchText) {
+      const q = searchText.toLowerCase();
+      const matchDocket = (c.number || '').toLowerCase().includes(q);
+      const matchConsignee = (c.consignee_company_name || '').toLowerCase().includes(q);
+      const matchCity = (c.consignee_city || '').toLowerCase().includes(q);
+      const matchInvoice = (c.invoice_number || '').toLowerCase().includes(q);
+      if (!matchDocket && !matchConsignee && !matchCity && !matchInvoice) return false;
+    }
+    // Status filter
+    if (statusFilter !== 'all') {
+      const st = (c.readable_status || c.tracking_status || '').toLowerCase();
+      if (statusFilter === 'delivered' && !st.includes('deliver')) return false;
+      if (statusFilter === 'transit' && !st.includes('transit') && !st.includes('dispatch')) return false;
+      if (statusFilter === 'created' && !st.includes('creat') && !st.includes('book')) return false;
+      if (statusFilter === 'cancelled' && !st.includes('cancel')) return false;
+    }
+    // Date range
+    if (dateFrom) {
+      const d = new Date(c.created_at || 0);
+      if (d < new Date(dateFrom)) return false;
+    }
+    if (dateTo) {
+      const d = new Date(c.created_at || 0);
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      if (d > to) return false;
+    }
+    return true;
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const totalPages = Math.ceil(filteredConsignments.length / ITEMS_PER_PAGE);
+  const paginatedConsignments = filteredConsignments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const clearFilters = () => {
+    setSearchText('');
+    setStatusFilter('all');
+    setDateFrom('');
+    setDateTo('');
+    setCurrentPage(1);
   };
 
-  const clearForm = () => setFormData({
-    consignee_company_name: '', consignee_address_line1: '', consignee_address_line2: '',
-    consignee_city: '', consignee_state: '', consignee_pin: '',
-    consignee_contact_name: '', consignee_phone: '', weight: '10', units: '1',
-    invoice_number: '', invoice_value: '',
-  });
+  const hasActiveFilters = searchText || statusFilter !== 'all' || dateFrom || dateTo;
 
-  // ─── Fetch Consignment List (Real API — all pages) ───────
+  // ─── Fetch ALL consignments (backend auto-paginates) ─────
   const fetchConsignments = useCallback(async () => {
     setListLoading(true);
     setCurrentPage(1);
     try {
-      const { data } = await api.post('/vxpress/list', {}, { timeout: 120000 });
-      const lrs = data?.lrs || data?.lr || [];
-      setConsignments(Array.isArray(lrs) ? lrs : [lrs]);
+      const { data } = await api.post('/vxpress/list', {}, { timeout: 300000 }); // 5 min for full fetch
+      const lrs = data?.lrs || [];
+      setConsignments(Array.isArray(lrs) ? lrs : [lrs]); // Already sorted newest-first by backend
       if (data?.total) {
         toast.success(`${data.total} consignments loaded!`);
       }
     } catch (err: any) {
       console.error('Failed to fetch consignments:', err);
-      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-        toast.error('V-Xpress server slow hai, thodi der baad try karo');
+      if (err.code === 'ECONNABORTED') {
+        toast.error('V-Xpress server se response mein time lag raha hai, retry karein');
       } else {
         toast.error('V-Xpress se data load nahi hua');
       }
@@ -109,74 +132,8 @@ const VExpressLogistics: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'history') {
-      fetchConsignments();
-    }
-  }, [activeTab, fetchConsignments]);
-
-  // ─── Create Consignment ─────────────────────────────────
-  const handleCreateConsignment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setCreatedConsignment(null);
-
-    const payload = {
-      consignment: {
-        consolidate: "No",
-        shipper_company_code: "19247",
-        consignment_number: "",
-        is_draft: "No",
-        consignor_company_code: "19247",
-        consignor_facility_code: "10318719",
-        consignor_pin: "400705",
-        consignor_contact_name: "RAHUL",
-        consignor_phone: "7045848448",
-        consignee_company_name: formData.consignee_company_name,
-        consignee_address_line1: formData.consignee_address_line1,
-        consignee_address_line2: formData.consignee_address_line2,
-        consignee_city: formData.consignee_city,
-        consignee_state: formData.consignee_state,
-        consignee_pin: formData.consignee_pin,
-        consignee_contact_name: formData.consignee_contact_name,
-        consignee_phone: formData.consignee_phone,
-        service_option: "SURF XPRS",
-        service_provider_company_code: "VX",
-        payment_mode: "To Bill",
-        weight: formData.weight,
-        weight_measure: "Kgs",
-        consignment_contents: {
-          consignment_content: {
-            product_name: "OTHERS",
-            product_display_name: "Toys",
-            units: formData.units,
-            unit_type: "Cartons",
-            weight: formData.weight,
-            weight_measure: "Kgs",
-            length: "10", width: "10", height: "20", uom: "inches"
-          }
-        },
-        consignment_invoices: {
-          consignment_invoice: {
-            invoice_number: formData.invoice_number,
-            invoice_value: formData.invoice_value,
-            invoice_date: new Date().toISOString().split('T')[0],
-          }
-        },
-        consignment_type: "OUTBOUND-TBB"
-      }
-    };
-
-    try {
-      const { data } = await api.post('/vxpress/create', payload);
-      setCreatedConsignment(data.consignment);
-      toast.success('Consignment created successfully!');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.error || 'Failed to create consignment');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchConsignments();
+  }, [fetchConsignments]);
 
   // ─── Track Consignment ──────────────────────────────────
   const handleTrack = async (docketNumber: string) => {
@@ -234,13 +191,25 @@ const VExpressLogistics: React.FC = () => {
   const handlePOD = async (consignment: Consignment) => {
     const toastId = toast.loading('POD download ho raha hai...');
     try {
-      const { data } = await api.get(`/vxpress/pod/${consignment.id}`);
+      const { data } = await api.post('/vxpress/pod', { number: consignment.number });
       toast.dismiss(toastId);
-      if (data?.pod_url || data?.url) {
+      // POD response may contain pods array with image URLs
+      if (data?.pods && Array.isArray(data.pods) && data.pods.length > 0) {
+        const pod = data.pods[0];
+        const imageUrl = pod?.pod_image_url || pod?.image_url || pod?.url;
+        if (imageUrl) {
+          window.open(imageUrl, '_blank');
+          toast.success('POD opened!');
+        } else {
+          toast.success('POD data received — check console');
+          console.log('POD data:', data);
+        }
+      } else if (data?.pod_url || data?.url) {
         window.open(data.pod_url || data.url, '_blank');
         toast.success('POD opened!');
       } else {
-        toast.success('POD data received');
+        toast.error('POD abhi available nahi hai');
+        console.log('POD response:', data);
       }
     } catch (err: any) {
       toast.dismiss(toastId);
@@ -263,162 +232,76 @@ const VExpressLogistics: React.FC = () => {
     try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
     catch { return d; }
   };
-
   // ─── RENDER ─────────────────────────────────────────────
   return (
     <div className="page-container">
-      {/* Header with Toggle */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 className="page-title">V-Xpress Logistics</h1>
-          <p className="page-subtitle">Create shipments, track dockets & manage consignments</p>
-        </div>
-        <div style={{ display: 'flex', background: 'var(--bg3)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border)' }}>
-          <button
-            className="btn"
-            style={{
-              border: 'none', fontSize: '0.85rem', fontWeight: 600, padding: '0.5rem 1.25rem', borderRadius: '8px',
-              background: activeTab === 'new' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'new' ? 'white' : 'var(--text-muted)',
-              transition: 'all 0.2s ease',
-            }}
-            onClick={() => setActiveTab('new')}
-          >
-            + Create New
-          </button>
-          <button
-            className="btn"
-            style={{
-              border: 'none', fontSize: '0.85rem', fontWeight: 600, padding: '0.5rem 1.25rem', borderRadius: '8px',
-              background: activeTab === 'history' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'history' ? 'white' : 'var(--text-muted)',
-              transition: 'all 0.2s ease',
-            }}
-            onClick={() => setActiveTab('history')}
-          >
-            📦 All Shipments
-          </button>
-        </div>
+      {/* Header */}
+      <div className="page-header">
+        <h1 className="page-title">V-Xpress Logistics</h1>
+        <p className="page-subtitle">Track dockets, download POD & manage consignments</p>
       </div>
 
-      {/* ═══ TAB: CREATE NEW ═══ */}
-      {activeTab === 'new' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem', alignItems: 'start' }}>
-          {/* Form */}
-          <div className="card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-              <div style={{ padding: '0.5rem', background: 'rgba(245,158,11,0.1)', borderRadius: '8px', color: '#F59E0B' }}><Truck size={20} /></div>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>New Shipment Details</h2>
-            </div>
-            <form onSubmit={handleCreateConsignment}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label className="form-label">Consignee (Receiver) Company Name</label>
-                  <input type="text" className="form-control" name="consignee_company_name" value={formData.consignee_company_name} onChange={handleChange} required placeholder="e.g. Rujutha Health care" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Contact Name</label>
-                  <input type="text" className="form-control" name="consignee_contact_name" value={formData.consignee_contact_name} onChange={handleChange} required placeholder="e.g. Advaith" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Phone Number</label>
-                  <input type="text" className="form-control" name="consignee_phone" value={formData.consignee_phone} onChange={handleChange} required placeholder="e.g. 9999999999" />
-                </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label className="form-label">Address Line 1</label>
-                  <input type="text" className="form-control" name="consignee_address_line1" value={formData.consignee_address_line1} onChange={handleChange} required placeholder="e.g. 107, K S Garden" />
-                </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label className="form-label">Address Line 2</label>
-                  <input type="text" className="form-control" name="consignee_address_line2" value={formData.consignee_address_line2} onChange={handleChange} placeholder="e.g. Lalbagh Road" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">City</label>
-                  <input type="text" className="form-control" name="consignee_city" value={formData.consignee_city} onChange={handleChange} required placeholder="e.g. Bengaluru" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">State</label>
-                  <input type="text" className="form-control" name="consignee_state" value={formData.consignee_state} onChange={handleChange} required placeholder="e.g. Karnataka" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Pincode</label>
-                  <input type="text" className="form-control" name="consignee_pin" value={formData.consignee_pin} onChange={handleChange} required placeholder="e.g. 560027" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Total Weight (Kgs)</label>
-                  <input type="number" className="form-control" name="weight" value={formData.weight} onChange={handleChange} required min="1" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Total Cartons/Units</label>
-                  <input type="number" className="form-control" name="units" value={formData.units} onChange={handleChange} required min="1" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Invoice Number</label>
-                  <input type="text" className="form-control" name="invoice_number" value={formData.invoice_number} onChange={handleChange} required placeholder="e.g. INV-001" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Invoice Value (₹)</label>
-                  <input type="number" className="form-control" name="invoice_value" value={formData.invoice_value} onChange={handleChange} required placeholder="e.g. 10000" />
+      {/* ═══ ALL SHIPMENTS ═══ */}
+          {/* Filter Bar */}
+          <div className="card" style={{ padding: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end' }}>
+              {/* Search */}
+              <div style={{ flex: '1 1 220px', minWidth: 180 }}>
+                <label style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '0.3rem' }}>Search</label>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                  <input type="text" className="form-control" placeholder="Docket, Consignee, City, Invoice..." value={searchText}
+                    onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }}
+                    style={{ paddingLeft: '2rem', fontSize: '0.85rem', height: 36 }} />
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                <button type="button" className="btn btn-secondary" onClick={clearForm}>Clear</button>
-                <button type="submit" className="btn btn-primary" disabled={loading} style={{ minWidth: 180, justifyContent: 'center' }}>
-                  {loading ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Processing...</> : <><Send size={16} /> Create Consignment</>}
+              {/* Status */}
+              <div style={{ minWidth: 140 }}>
+                <label style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '0.3rem' }}>Status</label>
+                <select className="form-control" value={statusFilter}
+                  onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  style={{ fontSize: '0.85rem', height: 36, background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 8, padding: '0 0.75rem' }}>
+                  <option value="all">All Status</option>
+                  <option value="delivered">✅ Delivered</option>
+                  <option value="transit">🚛 In Transit</option>
+                  <option value="created">📝 Created</option>
+                  <option value="cancelled">❌ Cancelled</option>
+                </select>
+              </div>
+              {/* Date From */}
+              <div style={{ minWidth: 140 }}>
+                <label style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '0.3rem' }}><Calendar size={10} /> From Date</label>
+                <input type="date" className="form-control" value={dateFrom}
+                  onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }}
+                  style={{ fontSize: '0.85rem', height: 36 }} />
+              </div>
+              {/* Date To */}
+              <div style={{ minWidth: 140 }}>
+                <label style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-dim)', display: 'block', marginBottom: '0.3rem' }}><Calendar size={10} /> To Date</label>
+                <input type="date" className="form-control" value={dateTo}
+                  onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }}
+                  style={{ fontSize: '0.85rem', height: 36 }} />
+              </div>
+              {/* Clear */}
+              {hasActiveFilters && (
+                <button className="btn btn-secondary" onClick={clearFilters} style={{ height: 36, fontSize: '0.8rem', borderRadius: 8, whiteSpace: 'nowrap' }}>
+                  <X size={14} /> Clear
                 </button>
-              </div>
-            </form>
+              )}
+              {/* Refresh */}
+              <button className="btn btn-secondary" onClick={fetchConsignments} disabled={listLoading} style={{ height: 36, fontSize: '0.8rem', borderRadius: 8 }}>
+                <RefreshCw size={14} style={listLoading ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
+              </button>
+            </div>
           </div>
 
-          {/* Right side: Info + Success */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div className="card" style={{ padding: '1.5rem', background: 'var(--bg3)' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text)' }}>Sender (Auto-filled)</h3>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div><strong>Company:</strong> Bafna Toys (19247)</div>
-                <div><strong>Facility:</strong> 10318719</div>
-                <div><strong>Contact:</strong> RAHUL (7045848448)</div>
-                <div><strong>Pincode:</strong> 400705</div>
-                <div><strong>Service:</strong> SURF XPRS · To Bill</div>
-              </div>
+          {/* Info Text */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              {filteredConsignments.length > 0
+                ? `${filteredConsignments.length} of ${consignments.length} consignment(s)${hasActiveFilters ? ' (filtered)' : ''} — Page ${currentPage} of ${totalPages}`
+                : consignments.length > 0 ? 'No results match your filters' : 'Loading data from V-Xpress...'}
             </div>
-
-            {createdConsignment && (
-              <div className="card" style={{ padding: '1.5rem', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <CheckCircle size={24} color="#10B981" />
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#10B981' }}>Success!</h3>
-                </div>
-                <div style={{ background: 'var(--bg)', padding: '1rem', borderRadius: '8px', border: '1px dashed var(--border)' }}>
-                  <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.25rem' }}>Docket / AWB Number</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}>{createdConsignment.number}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)', fontSize: '0.8rem' }}>
-                    <div><span style={{ color: 'var(--text-dim)' }}>Status: </span><span style={{ fontWeight: 600 }}>{createdConsignment.status}</span></div>
-                    <div><span style={{ color: 'var(--text-dim)' }}>Invoice: </span><span style={{ fontWeight: 600 }}>{createdConsignment.invoice_number}</span></div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: '0.8rem' }} onClick={() => handleTrack(createdConsignment.number)}>
-                    <Search size={14} /> Track
-                  </button>
-                  <button className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: '0.8rem' }} onClick={() => { setActiveTab('history'); }}>
-                    <Eye size={14} /> View All
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        /* ═══ TAB: ALL SHIPMENTS (HISTORY) ═══ */
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              {consignments.length > 0 ? `${consignments.length} consignment(s) — Page ${currentPage} of ${totalPages} (showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, consignments.length)})` : 'Loading data from V-Xpress...'}
-            </div>
-            <button className="btn btn-secondary" onClick={fetchConsignments} disabled={listLoading} style={{ fontSize: '0.8rem' }}>
-              <RefreshCw size={14} style={listLoading ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
-            </button>
           </div>
 
           {listLoading ? (
@@ -427,7 +310,7 @@ const VExpressLogistics: React.FC = () => {
             <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📦</div>
               <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' }}>Koi consignment nahi mila</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Pehle "Create New" tab se ek naya docket banayein</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Data load hone ka wait karein...</div>
             </div>
           ) : (
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -524,8 +407,9 @@ const VExpressLogistics: React.FC = () => {
               )}
             </div>
           )}
-        </>
-      )}
+
+
+
 
       {/* ═══ TRACKING MODAL ═══ */}
       {trackingModal.open && (

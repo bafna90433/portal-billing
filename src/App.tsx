@@ -15,7 +15,7 @@ import GeneratedBills from './pages/billing/GeneratedBills';
 import CustomerFulfillment from './pages/shared/CustomerFulfillment';
 import BillCreate from './pages/billing/BillCreate';
 import BillView from './pages/billing/BillView';
-import VExpressLogistics from './pages/billing/VExpressLogistics';
+
 
 const RoleRedirect: React.FC = () => {
   const { user } = useAuthStore();
@@ -55,7 +55,7 @@ function App() {
           <Route path="generated" element={<GeneratedBills />} />
           <Route path="fulfillment" element={<CustomerFulfillment />} />
           <Route path="create/:orderId" element={<BillCreate />} />
-          <Route path="vxpress" element={<VExpressLogistics />} />
+
           <Route path=":billId" element={<BillView />} />
         </Route>
 

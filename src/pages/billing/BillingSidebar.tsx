@@ -15,7 +15,6 @@ const menuItems = [
   { to: '/billing/dashboard', icon: <LayoutDashboard size={17} />, label: 'Dashboard' },
   { to: '/billing/ready', icon: <Truck size={17} />, label: 'Ready for Bill' },
   { to: '/billing/generated', icon: <Receipt size={17} />, label: 'Invoice Records' },
-  { to: '/billing/vxpress', icon: <Truck size={17} />, label: 'V-Xpress Logistics' },
   { to: '/billing/fulfillment', icon: <Users size={17} />, label: 'Customer Fulfillment' },
 ];
 
