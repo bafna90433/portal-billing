@@ -183,7 +183,7 @@ const BillView: React.FC = () => {
     return { ctn, inr, loose, customLooseBoxesCount, totalBox: ctn + inr + customLooseBoxesCount };
   })();
 
-  const gstBreakdown = bill?.items?.reduce<Record<string, { category: string; rate: number; gstAmount: number }>>((acc, item: any) => {
+  const gstBreakdown = ((bill?.items || []) as any[]).reduce<Record<string, { category: string; rate: number; gstAmount: number }>>((acc, item: any) => {
     if ((item.gstRate || 0) <= 0 || (item.gstAmount || 0) <= 0) return acc;
     const cat = item.category || 'General';
     const formattedCat = cat.split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
