@@ -98,6 +98,7 @@ const BillView: React.FC = () => {
             receivedAt: order?.receivedAt || null,
             status: order?.status || null,
             stickerQty: order?.items?.[0]?.stickerQty || 0,
+            poNo: order?.poNo || null,
           });
 
           if (order?.paperOrderImageUrl) {
@@ -420,6 +421,11 @@ const BillView: React.FC = () => {
                 <div style={{ color: 'var(--text-dim)' }}>
                   Order: <strong style={{ color: 'var(--text)' }}>{bill.orderNumber}</strong>
                 </div>
+                {orderExtra?.poNo && (
+                  <div style={{ color: 'var(--text-dim)' }}>
+                    PO No: <strong style={{ color: 'var(--text)' }}>{orderExtra.poNo}</strong>
+                  </div>
+                )}
                 {bill.tallyBillNumber && (
                   <div style={{ color: 'var(--text-dim)' }}>
                     Tally Bill No: <strong style={{ color: 'var(--text)' }}>{bill.tallyBillNumber}</strong>
