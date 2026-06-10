@@ -591,6 +591,28 @@ const BillView: React.FC = () => {
                   <span>Grand Total</span>
                   <span className="amount">₹{bill.totalAmount.toFixed(2)}</span>
                 </div>
+                <div
+                  className="invoice-total-row"
+                  style={{
+                    marginTop: '0.35rem',
+                    paddingTop: '0.5rem',
+                    borderTop: '1px dashed #E5E7EB',
+                    alignItems: 'flex-start',
+                    gap: '0.75rem',
+                  }}
+                >
+                  <span className="label" style={{ fontWeight: 700, color: '#0F172A' }}>Total Box</span>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 800, color: '#0F172A' }}>{totalBoxSummary.totalBox}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 2 }}>
+                      {[
+                        totalBoxSummary.ctn > 0 ? `${totalBoxSummary.ctn} CTN` : null,
+                        totalBoxSummary.inr > 0 ? `${totalBoxSummary.inr} INR` : null,
+                        totalBoxSummary.customLooseBoxesCount > 0 ? `${totalBoxSummary.customLooseBoxesCount} MIX BOX` : null,
+                      ].filter(Boolean).join(' + ') || '0 BOX'}
+                    </div>
+                  </div>
+                </div>
                 <div className="invoice-total-row" style={{ marginTop: '0.5rem' }}>
                   <span className="label" style={{ color: 'var(--success)' }}>Paid</span>
                   <span style={{ color: 'var(--success)', fontWeight: 700 }}>₹{bill.paidAmount.toFixed(2)}</span>
