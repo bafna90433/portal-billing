@@ -29,7 +29,7 @@ const BillCreate: React.FC = () => {
         setOrder(fetchedOrder);
 
         // Check if already billed
-        if (fetchedOrder.status === 'billed' || fetchedOrder.status === 'paid') {
+        if (['billed', 'checked', 'dispatched', 'paid'].includes(fetchedOrder.status)) {
           setAlreadyBilled(true);
         }
 

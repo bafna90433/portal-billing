@@ -19,13 +19,13 @@ const ReadyForBill: React.FC = () => {
   const fetchReadyOrders = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch orders in dispatched, partial, packing, or hold status
-      const { data } = await api.get('/orders?status=dispatched,partial,packing_in_progress,waiting&limit=100');
+      // Fetch orders in dispatched, partial, packing, packing_complete, or hold status
+      const { data } = await api.get('/orders?status=dispatched,partial,packing_in_progress,packing_complete,waiting&limit=100');
       const fetchedOrders: any[] = data.orders || [];
       
       const filtered = fetchedOrders.filter((o: any) => {
         // Always display packing or waiting (hold) orders so the bill is accessible
-        if (o.status === 'packing_in_progress' || o.status === 'waiting') {
+        if (o.status === 'packing_in_progress' || o.status === 'packing_complete' || o.status === 'waiting') {
           return true;
         }
         // For partial or fully dispatched orders, only show if they haven't been billed yet
@@ -147,7 +147,7 @@ const ReadyForBill: React.FC = () => {
                 overflow: 'hidden',
                 borderLeft: order.status === 'waiting'
                   ? '4px solid #F59E0B'
-                  : order.status === 'packing_in_progress'
+                  : (order.status === 'packing_in_progress' || order.status === 'packing_complete')
                     ? '4px solid #6366F1'
                     : '4px solid var(--success)',
               }}>
@@ -173,6 +173,10 @@ const ReadyForBill: React.FC = () => {
                   ) : order.status === 'packing_in_progress' ? (
                     <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(99,102,241,0.15)', color: '#6366F1' }}>
                       <Loader size={11} style={{ animation: 'spin 1.5s linear infinite' }} /> Packing
+                    </span>
+                  ) : order.status === 'packing_complete' ? (
+                    <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(16,185,129,0.15)', color: '#10B981' }}>
+                      <CheckCircle size={11} /> Packing Done
                     </span>
                   ) : order.status === 'partial' ? (
                     <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>

@@ -33,10 +33,6 @@ const BillView: React.FC = () => {
   const [showPackingSlip, setShowPackingSlip] = useState(false);
 
   const handleSubmitBill = async () => {
-    if (orderExtra?.status && !['dispatched', 'billed', 'paid'].includes(orderExtra.status)) {
-      toast.error('Complete Submit locked! FinalCheck is pending.');
-      return;
-    }
     setSubmitting(true);
     try {
       const { data } = await api.patch(`/billing/${billId}/submit`);
@@ -221,7 +217,7 @@ const BillView: React.FC = () => {
               {submitting ? (
                 <><Loader size={15} style={{ animation: 'spin 1s linear infinite', marginRight: 4 }} /> Submitting...</>
               ) : (
-                <>{orderExtra?.status && !['dispatched', 'billed', 'paid'].includes(orderExtra.status) ? '🔒 FinalCheck Pending' : '🚀 Complete Submit'}</>
+                <>🚀 Final Dispatch</>
               )}
             </button>
           ) : (
@@ -265,72 +261,7 @@ const BillView: React.FC = () => {
         </div>
       </div>
 
-      {/* Complete Submit Alert Banners */}
-      {!bill.isSubmitted ? (
-        <div className="no-print" style={{ 
-          background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06))', 
-          border: '1px solid rgba(99,102,241,0.25)', 
-          borderRadius: 'var(--radius)', 
-          padding: '1.25rem 1.5rem', 
-          marginBottom: '1.5rem', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          gap: '1.5rem',
-          boxShadow: '0 10px 15px -3px rgba(99,102,241,0.05)',
-          textAlign: 'left'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontSize: '2rem' }}>📋</span>
-            <div>
-              <div style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1.05rem', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
-                Invoice Pending Submit — Save to Records
-              </div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                This invoice is currently in a pending state. Submit it to permanently save it to your generated records.
-              </div>
-            </div>
-          </div>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleSubmitBill} 
-            disabled={submitting} 
-            style={{ 
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', 
-              border: 'none', 
-              color: '#fff', 
-              fontWeight: 800,
-              padding: '0.65rem 1.5rem',
-              boxShadow: '0 8px 20px -6px rgba(99,102,241,0.4)',
-              cursor: 'pointer'
-            }}
-          >
-            {submitting ? (
-              <><Loader size={16} style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} /> Finalizing...</>
-            ) : (
-              <>{orderExtra?.status && !['dispatched', 'billed', 'paid'].includes(orderExtra.status) ? '🔒 Complete Submit (Locked)' : '🚀 Complete Submit'}</>
-            )}
-          </button>
-        </div>
-      ) : (
-        <div className="no-print" style={{ 
-          background: 'rgba(16,185,129,0.04)', 
-          border: '1px solid rgba(16,185,129,0.25)', 
-          borderRadius: 'var(--radius)', 
-          padding: '1rem 1.25rem', 
-          marginBottom: '1.5rem', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.75rem',
-          color: '#10B981',
-          fontWeight: 700,
-          fontSize: '0.9rem',
-          textAlign: 'left'
-        }}>
-          <span style={{ fontSize: '1.15rem' }}>✓</span>
-          <span>This invoice is fully finalized and recorded in the database.</span>
-        </div>
-      )}
+
 
       {/* Main layout: invoice + optional reference panels column */}
       <div 
