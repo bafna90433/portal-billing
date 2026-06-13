@@ -31,6 +31,39 @@ const BillView: React.FC = () => {
   const [settings, setSettings] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showPackingSlip, setShowPackingSlip] = useState(false);
+  const [paperCheckCount, setPaperCheckCount] = useState(0);
+
+  const handlePaperCheck = async () => {
+    if (paperCheckCount < 2) {
+      setPaperCheckCount(prev => prev + 1);
+      return;
+    }
+
+    if (!dispatch || dispatch.isVerified) {
+      return;
+    }
+
+    try {
+      const verifyPayload = dispatch.items.map((di: any) => ({
+        productId: di.productId,
+        checkedQtyInner: di.packedInners || 0,
+        checkedQtyPcs: di.packedLoose || 0,
+        totalCheckedPcs: (di.packedCartons || 0) * (di.innerPerCarton || 1) * (di.pcsPerInner || 1) + 
+                         (di.packedInners || 0) * (di.pcsPerInner || 1) + 
+                         (di.packedLoose || 0)
+      }));
+
+      await api.patch(`/dispatch/${dispatch._id}/verify`, { items: verifyPayload });
+      
+      toast.success('Paper checking successful! Order marked as verified.');
+      
+      setDispatch({ ...dispatch, isVerified: true });
+      setPaperCheckCount(0);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to verify dispatch');
+      setPaperCheckCount(0);
+    }
+  };
 
   const handleSubmitBill = async () => {
     setSubmitting(true);
@@ -235,6 +268,22 @@ const BillView: React.FC = () => {
             }}>
               ✓ Finalized Record
             </span>
+          )}
+          {dispatch && !dispatch.isVerified && (
+            <button 
+              className="btn btn-secondary" 
+              onClick={handlePaperCheck} 
+              style={{ 
+                color: paperCheckCount > 0 ? '#EAB308' : '#475569', 
+                borderColor: paperCheckCount > 0 ? '#FEF08A' : '#E2E8F0',
+                background: paperCheckCount > 0 ? '#FEF9C3' : 'transparent',
+                transition: 'all 0.2s ease',
+                fontWeight: paperCheckCount > 0 ? 700 : 500
+              }} 
+              title="Click 3 times to auto-verify based on packed quantities"
+            >
+              📝 Paper Checking {paperCheckCount > 0 ? `(${paperCheckCount + 1}/3)` : ''}
+            </button>
           )}
           <button className="btn btn-secondary" onClick={() => setEditTallyModal(true)} style={{ color: '#6366F1', borderColor: '#C7D2FE' }} id="edit-tally-btn">
             📑 Tally No: {bill.tallyBillNumber || 'Add'}
