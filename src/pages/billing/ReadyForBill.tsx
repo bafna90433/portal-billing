@@ -253,14 +253,12 @@ const ReadyForBill: React.FC = () => {
                   ) : (
                     <button
                       className="btn btn-success"
-                      style={{ flex: 1, justifyContent: 'center', opacity: (order.status === 'waiting') ? 0.6 : 1 }}
+                      style={{ flex: 1, justifyContent: 'center' }}
                       onClick={() => handleGenerateBill(order)}
-                      disabled={isGenerating || order.status === 'waiting'}
+                      disabled={isGenerating}
                     >
                       {isGenerating ? (
                         <><Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating...</>
-                      ) : order.status === 'waiting' ? (
-                        <><Clock size={15} /> Order on Hold</>
                       ) : (
                         <><Receipt size={15} /> Generate Bill</>
                       )}
