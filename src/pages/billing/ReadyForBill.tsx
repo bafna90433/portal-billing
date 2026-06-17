@@ -20,7 +20,7 @@ const ReadyForBill: React.FC = () => {
     setLoading(true);
     try {
       // Fetch orders in dispatched, partial, packing, packing_complete, or hold status
-      const { data } = await api.get('/orders?status=dispatched,partial,packing_in_progress,packing_complete,waiting&limit=100');
+      const { data } = await api.get('/orders?status=dispatched,partial,packing_in_progress,packing_complete,waiting&limit=100&readyForBill=true');
       const fetchedOrders: any[] = data.orders || [];
       
       const filtered = fetchedOrders.filter((o: any) => {
