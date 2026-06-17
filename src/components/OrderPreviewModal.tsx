@@ -402,6 +402,7 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
                           <th>Packaging</th>
                           <th style={{ textAlign: 'center' }}>Qty (Pcs)</th>
                           <th style={{ textAlign: 'right' }}>Rate (₹)</th>
+                          <th style={{ textAlign: 'center' }}>Discount</th>
                           <th style={{ textAlign: 'center' }}>GST %</th>
                           <th style={{ textAlign: 'right' }}>GST (₹)</th>
                           <th style={{ textAlign: 'right' }}>Total (₹)</th>
@@ -436,6 +437,9 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
                               </td>
                               <td style={{ textAlign: 'center', fontWeight: 700 }}>{item.qty}</td>
                               <td style={{ textAlign: 'right' }}>₹{item.pricePerUnit?.toFixed(2)}</td>
+                              <td style={{ textAlign: 'center', color: (item.discountValue || 0) > 0 ? 'var(--success)' : 'var(--text-muted)' }}>
+                                {(item.discountValue || 0) > 0 ? (item.discountType === 'flat' ? `₹${item.discountValue} Off` : `${item.discountValue}% Off`) : '—'}
+                              </td>
                               <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{item.gstRate}%</td>
                               <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>₹{item.gstAmount?.toFixed(2)}</td>
                               <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{item.totalAmount?.toFixed(2)}</td>
@@ -452,6 +456,12 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
                           <span className="label">Subtotal</span>
                           <span className="amount">₹{bill.subtotal?.toFixed(2)}</span>
                         </div>
+                        {bill.totalDiscount > 0 && (
+                          <div className="invoice-total-row" style={{ color: 'var(--success)' }}>
+                            <span className="label">Total Discount</span>
+                            <span className="amount" style={{ fontWeight: 700 }}>-₹{bill.totalDiscount?.toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="invoice-total-row">
                           <span className="label">GST</span>
                           <span className="amount">₹{bill.totalGst?.toFixed(2)}</span>
