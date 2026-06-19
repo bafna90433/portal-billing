@@ -24,6 +24,10 @@ const ReadyForBill: React.FC = () => {
       const fetchedOrders: any[] = data.orders || [];
       
       const filtered = fetchedOrders.filter((o: any) => {
+        // If a bill has already been submitted/finalized, hide it
+        if (o.billInfo && o.billInfo.isSubmitted) {
+          return false;
+        }
         // Always display packing or waiting (hold) orders so the bill is accessible
         if (o.status === 'packing_in_progress' || o.status === 'packing_complete' || o.status === 'waiting') {
           return true;

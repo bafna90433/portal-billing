@@ -101,6 +101,10 @@ const BillView: React.FC = () => {
       }
 
       const { data } = await api.get(`/billing/${billId}`);
+      if (data) {
+        data.totalAmount = Math.round(data.totalAmount || 0);
+        data.balanceDue = Math.max(0, data.totalAmount - (data.paidAmount || 0));
+      }
       setBill(data);
       setTallyBillNoInput(data.tallyBillNumber || '');
 

@@ -7,7 +7,7 @@ const GeneratedBills: React.FC = () => {
   const [bills, setBills] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'submitted' | 'pending'>('all');
+  const [activeTab] = useState<'submitted'>('submitted');
   const [showFilters, setShowFilters] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -79,6 +79,8 @@ const GeneratedBills: React.FC = () => {
     }
     if (activeTab === 'pending') {
       if (b.isSubmitted === true) return false;
+      const activeStatuses = ['dispatched', 'partial', 'packing_in_progress', 'packing_complete', 'waiting'];
+      if (!activeStatuses.includes(b.orderStatus)) return false;
     }
 
     // Apply Date Filters
@@ -289,54 +291,7 @@ const GeneratedBills: React.FC = () => {
         </div>
       )}
 
-      {/* Premium Navigation Tabs */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '0.5rem', 
-        marginBottom: '1.25rem', 
-        borderBottom: '1px solid var(--border)', 
-        paddingBottom: '0.5rem' 
-      }}>
-        {[
-          { id: 'all', label: '🗂️ All Generated Bills', count: bills.length },
-          { id: 'submitted', label: '✅ Finalized Records', count: bills.filter(b => b.isSubmitted === true).length },
-          { id: 'pending', label: '⏳ Pending Submit', count: bills.filter(b => b.isSubmitted !== true).length }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            style={{
-              padding: '0.55rem 1.15rem',
-              border: 'none',
-              background: activeTab === tab.id 
-                ? 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))' 
-                : 'transparent',
-              color: activeTab === tab.id ? 'var(--primary-light)' : 'var(--text-muted)',
-              borderBottom: activeTab === tab.id ? '2px solid var(--primary-light)' : '2px solid transparent',
-              fontWeight: 800,
-              fontSize: '0.85rem',
-              borderRadius: '8px 8px 0 0',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              transition: 'all 0.2s'
-            }}
-          >
-            <span>{tab.label}</span>
-            <span style={{ 
-              fontSize: '0.72rem', 
-              padding: '2px 8px', 
-              background: activeTab === tab.id ? 'var(--primary-light)' : 'rgba(255,255,255,0.05)', 
-              color: activeTab === tab.id ? 'white' : 'var(--text-dim)', 
-              borderRadius: 20, 
-              fontWeight: 700 
-            }}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
+
 
       {/* Active Filter Indicators */}
       {(search || startDate || endDate || minAmount || maxAmount) && (
@@ -506,7 +461,7 @@ const GeneratedBills: React.FC = () => {
                     <td style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{b.orderNumber}</td>
                     <td style={{ fontWeight: 700 }}>{b.customerName}</td>
                     <td style={{ fontWeight: 800, color: 'var(--success)' }}>
-                      ₹{b.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{Math.round(b.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ color: 'var(--text-muted)' }}>
                       {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}

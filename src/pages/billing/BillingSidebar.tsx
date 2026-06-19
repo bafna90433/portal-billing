@@ -91,25 +91,7 @@ const BillingSidebar: React.FC<BillingSidebarProps> = ({ open, onClose }) => {
             >
               <span className="nav-icon">{item.icon}</span>
               <span style={{ flex: 1 }}>{item.label}</span>
-              {item.to === '/billing/generated' && pendingBillCount > 0 && (
-                <span className="blinking-bell-badge" style={{ 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '0.25rem',
-                  padding: '2px 8px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: '12px',
-                  color: '#EF4444',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  marginLeft: 'auto',
-                  animation: 'sidebar-bell-blink 1.5s infinite ease-in-out'
-                }}>
-                  <Bell size={12} style={{ animation: 'sidebar-bell-ring 1s infinite', flexShrink: 0 }} />
-                  <span>{pendingBillCount}</span>
-                </span>
-              )}
+
             </NavLink>
           ))}
         </nav>
