@@ -181,8 +181,11 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
                       </button>
                     )}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Clock size={14} /> {new Date(order.createdAt).toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Clock size={14} /> Created: {new Date(order.createdAt).toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    {order.receivedAt && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Clock size={14} style={{ color: '#6366F1' }} /> Received: <strong style={{ color: 'var(--text-dark)' }}>{new Date(order.receivedAt).toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong></span>
+                    )}
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><User size={14} /> Salesman: <strong style={{ color: 'var(--text-dark)' }}>{order.salesmanName}</strong></span>
                   </div>
                 </div>
