@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Clock, AlertTriangle, IndianRupee, FileText, ArrowUpRight, ArrowRight } from 'lucide-react';
+import { Clock, AlertTriangle, IndianRupee, FileText, ArrowUpRight, ArrowRight, AlertCircle } from 'lucide-react';
 import DashboardHero from '../../components/DashboardHero';
 import api from '../../api/axios';
 import UrgentNotifBanner from '../../components/UrgentNotifBanner';
@@ -11,6 +11,7 @@ const BillingDashboard: React.FC = () => {
   const [draftBills, setDraftBills] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [urgentModalNote, setUrgentModalNote] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const fetchData = useCallback(async (silent = false) => {
@@ -42,6 +43,15 @@ const BillingDashboard: React.FC = () => {
 
   return (
     <div style={{ padding: '1.75rem 2rem', width: '100%', boxSizing: 'border-box' }}>
+      <style>{`
+        @keyframes blink-animation {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+        .blink-urgent {
+          animation: blink-animation 0.6s infinite;
+        }
+      `}</style>
       <UrgentNotifBanner />
 
       <DashboardHero
@@ -149,15 +159,57 @@ const BillingDashboard: React.FC = () => {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}
                   >
-                    <td style={{ padding: '0.5rem 1.25rem', fontWeight: 700, color: 'var(--primary)', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {b.orderNumber}
-                      {b.isDraft ? (
-                        <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(100,116,139,0.12)', color: '#64748B' }}>DRAFT</span>
-                      ) : b.estimatedDeliveryDate ? (
-                        <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.12)', color: '#D97706' }}>HOLD</span>
-                      ) : (
-                        <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(99,102,241,0.12)', color: '#6366F1' }}>PACKING</span>
-                      )}
+                    <td style={{ padding: '0.5rem 1.25rem', fontWeight: 700, color: 'var(--primary)', fontSize: '0.82rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {b.orderNumber}
+                        {b.isUrgent && (
+                          <span className="blink-urgent" style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.2rem',
+                            padding: '1px 6px',
+                            background: '#FEE2E2',
+                            color: '#EF4444',
+                            borderRadius: '4px',
+                            fontSize: '0.58rem',
+                            fontWeight: 800,
+                            border: '1px solid rgba(239,68,68,0.2)'
+                          }}>
+                            🔴 URGENT
+                          </span>
+                        )}
+                        {b.isUrgent && b.urgentNote && (
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setUrgentModalNote(b.urgentNote);
+                            }}
+                            style={{
+                              marginLeft: '0.15rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              padding: '2px',
+                              background: '#EF4444',
+                              color: '#FFFFFF',
+                              borderRadius: '50%',
+                              width: '16px',
+                              height: '16px'
+                            }}
+                            title="Click to view urgent note"
+                          >
+                            <FileText size={10} />
+                          </span>
+                        )}
+                        {b.isDraft ? (
+                          <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(100,116,139,0.12)', color: '#64748B' }}>DRAFT</span>
+                        ) : b.estimatedDeliveryDate ? (
+                          <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.12)', color: '#D97706' }}>HOLD</span>
+                        ) : (
+                          <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(99,102,241,0.12)', color: '#6366F1' }}>PACKING</span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '0.5rem 1.25rem', fontWeight: 600, fontSize: '0.82rem' }}>{b.customerName}</td>
                     <td style={{ padding: '0.5rem 1.25rem', fontWeight: 700, fontSize: '0.82rem', color: '#D97706' }}>
@@ -235,6 +287,57 @@ const BillingDashboard: React.FC = () => {
         </div>
       </div>
 
+      {urgentModalNote !== null && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }} onClick={() => setUrgentModalNote(null)}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            maxWidth: '450px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            border: '2px solid #FCA5A5',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#EF4444' }}>
+              <AlertCircle size={20} />
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem' }}>Urgent Order Note</h3>
+            </div>
+            <p style={{
+              fontSize: '0.95rem',
+              color: '#374151',
+              lineHeight: '1.5',
+              background: '#FEF2F2',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid #FEE2E2',
+              whiteSpace: 'pre-wrap',
+              fontWeight: 600,
+            }}>
+              {urgentModalNote}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setUrgentModalNote(null)}
+                style={{ padding: '0.4rem 1.25rem', borderRadius: '8px' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

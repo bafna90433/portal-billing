@@ -7,7 +7,7 @@ const GeneratedBills: React.FC = () => {
   const [bills, setBills] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTab] = useState<'submitted'>('submitted');
+  const [activeTab] = useState<'submitted' | 'pending'>('submitted');
   const [showFilters, setShowFilters] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');

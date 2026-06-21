@@ -17,6 +17,7 @@ const BillCreate: React.FC = () => {
   const [resolvedDispatchId, setResolvedDispatchId] = useState<string | null>(null);
   const [alreadyBilled, setAlreadyBilled] = useState(false);
   const [tallyBillNumber, setTallyBillNumber] = useState('');
+  const [urgentModalNote, setUrgentModalNote] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,10 +86,58 @@ const BillCreate: React.FC = () => {
 
   return (
     <div className="page-container" style={{ maxWidth: 600, margin: '0 auto' }}>
+      <style>{`
+        @keyframes blink-animation {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+        .blink-urgent {
+          animation: blink-animation 0.6s infinite;
+        }
+      `}</style>
       <div className="page-header">
         <div>
           <h1 className="page-title">Generate Bill</h1>
-          <p className="page-subtitle">Order {order.orderNumber} — {order.customerName}</p>
+          <p className="page-subtitle" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
+            <span>Order {order.orderNumber}</span>
+            {order.isUrgent && (
+              <span className="blink-urgent" style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.2rem',
+                padding: '1px 6px',
+                background: '#FEE2E2',
+                color: '#EF4444',
+                borderRadius: '4px',
+                fontSize: '0.62rem',
+                fontWeight: 800,
+                border: '1px solid rgba(239,68,68,0.2)'
+              }}>
+                🔴 URGENT
+              </span>
+            )}
+            {order.isUrgent && order.urgentNote && (
+              <span
+                onClick={() => setUrgentModalNote(order.urgentNote)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  background: '#FEF2F2',
+                  color: '#B91C1C',
+                  border: '1px solid rgba(239,68,68,0.18)',
+                  padding: '1px 6px',
+                  borderRadius: '4px',
+                  fontSize: '0.62rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+                title="Click to view urgent note"
+              >
+                🚨 View Urgent Note
+              </span>
+            )}
+            <span>{" — "}{order.customerName}</span>
+          </p>
         </div>
       </div>
 
@@ -193,6 +242,57 @@ const BillCreate: React.FC = () => {
           </div>
         </div>
       </div>
+      {urgentModalNote !== null && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }} onClick={() => setUrgentModalNote(null)}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            maxWidth: '450px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            border: '2px solid #FCA5A5',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#EF4444' }}>
+              <AlertCircle size={20} />
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem' }}>Urgent Order Note</h3>
+            </div>
+            <p style={{
+              fontSize: '0.95rem',
+              color: '#374151',
+              lineHeight: '1.5',
+              background: '#FEF2F2',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid #FEE2E2',
+              whiteSpace: 'pre-wrap',
+              fontWeight: 600,
+            }}>
+              {urgentModalNote}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setUrgentModalNote(null)}
+                style={{ padding: '0.4rem 1.25rem', borderRadius: '8px' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

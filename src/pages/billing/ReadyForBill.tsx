@@ -14,6 +14,7 @@ const ReadyForBill: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [urgentModalNote, setUrgentModalNote] = useState<string | null>(null);
   // States related to Tally modal are removed
 
   const fetchReadyOrders = useCallback(async () => {
@@ -72,6 +73,15 @@ const ReadyForBill: React.FC = () => {
 
   return (
     <div className="page-container">
+      <style>{`
+        @keyframes blink-animation {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+        .blink-urgent {
+          animation: blink-animation 0.6s infinite;
+        }
+      `}</style>
       <div className="page-header">
         <div>
           <h1 className="page-title">Ready for Bill</h1>
@@ -158,9 +168,50 @@ const ReadyForBill: React.FC = () => {
                 {/* Order header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                       {order.orderNumber}
+                      {order.isUrgent && (
+                        <span className="blink-urgent" style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.2rem',
+                          padding: '1px 6px',
+                          background: '#FEE2E2',
+                          color: '#EF4444',
+                          borderRadius: '4px',
+                          fontSize: '0.58rem',
+                          fontWeight: 800,
+                          border: '1px solid rgba(239,68,68,0.2)'
+                        }}>
+                          🔴 URGENT
+                        </span>
+                      )}
                     </div>
+                    {order.isUrgent && order.urgentNote && (
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUrgentModalNote(order.urgentNote);
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          background: 'rgba(239,68,68,0.06)',
+                          border: '1px solid rgba(239,68,68,0.18)',
+                          borderRadius: 6,
+                          padding: '3px 8px',
+                          marginTop: '0.45rem',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color: '#B91C1C',
+                          cursor: 'pointer'
+                        }}
+                        title="Click to view urgent note"
+                      >
+                        🚨 View Urgent Note
+                      </div>
+                    )}
                     <div style={{ fontWeight: 700, fontSize: '1.05rem', marginTop: '0.2rem', letterSpacing: '-0.015em' }}>
                       {order.customerName}
                     </div>
@@ -286,6 +337,57 @@ const ReadyForBill: React.FC = () => {
       {/* Tally Modal removed - entered inside bill view instead */}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {urgentModalNote !== null && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }} onClick={() => setUrgentModalNote(null)}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            maxWidth: '450px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            border: '2px solid #FCA5A5',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#EF4444' }}>
+              <AlertCircle size={20} />
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem' }}>Urgent Order Note</h3>
+            </div>
+            <p style={{
+              fontSize: '0.95rem',
+              color: '#374151',
+              lineHeight: '1.5',
+              background: '#FEF2F2',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid #FEE2E2',
+              whiteSpace: 'pre-wrap',
+              fontWeight: 600,
+            }}>
+              {urgentModalNote}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setUrgentModalNote(null)}
+                style={{ padding: '0.4rem 1.25rem', borderRadius: '8px' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

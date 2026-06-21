@@ -27,6 +27,7 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
 
   const [bill, setBill] = useState<any>(null);
   const [viewInvoice, setViewInvoice] = useState(false);
+  const [urgentModalNote, setUrgentModalNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && orderId) {
@@ -139,6 +140,15 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ display: 'flex', zIndex: 1000, padding: '2rem' }}>
+      <style>{`
+        @keyframes blink-animation {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+        .blink-urgent {
+          animation: blink-animation 0.6s infinite;
+        }
+      `}</style>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '1200px', width: '100%', height: '100%', maxHeight: '95vh', display: 'flex', flexDirection: 'column', borderRadius: '16px', overflow: 'hidden' }}>
         <div className="modal-header">
           <h2 className="modal-title">Order Preview</h2>
@@ -167,7 +177,45 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
                 {/* Left: Order Info */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, letterSpacing: '0.02em', color: 'var(--text-dark)' }}>{order.orderNumber}</h2>
+                    <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, letterSpacing: '0.02em', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {order.orderNumber}
+                      {order.isUrgent && (
+                        <span className="blink-urgent" style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.2rem',
+                          padding: '2px 8px',
+                          background: '#FEE2E2',
+                          color: '#EF4444',
+                          borderRadius: '5px',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          border: '1px solid rgba(239,68,68,0.2)'
+                        }}>
+                          🔴 URGENT
+                        </span>
+                      )}
+                      {order.isUrgent && order.urgentNote && (
+                        <span
+                          onClick={() => setUrgentModalNote(order.urgentNote)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            background: '#FEF2F2',
+                            color: '#B91C1C',
+                            border: '1px solid rgba(239,68,68,0.18)',
+                            padding: '2px 8px',
+                            borderRadius: '5px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                          title="Click to view urgent note"
+                        >
+                          🚨 View Urgent Note
+                        </span>
+                      )}
+                    </h2>
                     <span style={{ background: getStatusColor(order.status), color: 'white', padding: '4px 10px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                       {order.status === 'dispatched' ? 'READY TO DISPATCH' : order.status}
                     </span>
@@ -722,6 +770,57 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {urgentModalNote !== null && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+        }} onClick={() => setUrgentModalNote(null)}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            maxWidth: '450px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            border: '2px solid #FCA5A5',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#EF4444' }}>
+              <AlertCircle size={20} />
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem' }}>Urgent Order Note</h3>
+            </div>
+            <p style={{
+              fontSize: '0.95rem',
+              color: '#374151',
+              lineHeight: '1.5',
+              background: '#FEF2F2',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid #FEE2E2',
+              whiteSpace: 'pre-wrap',
+              fontWeight: 600,
+            }}>
+              {urgentModalNote}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setUrgentModalNote(null)}
+                style={{ padding: '0.4rem 1.25rem', borderRadius: '8px' }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
