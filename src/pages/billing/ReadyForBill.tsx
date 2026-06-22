@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Truck, Receipt, Loader, CheckCircle, Package, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+import { Truck, Receipt, Loader, CheckCircle, Package, Clock, AlertCircle, RefreshCw, Search } from 'lucide-react';
 import api from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -15,13 +15,14 @@ const ReadyForBill: React.FC = () => {
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [urgentModalNote, setUrgentModalNote] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   // States related to Tally modal are removed
 
   const fetchReadyOrders = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch orders in dispatched, partial, packing, packing_complete, or hold status
-      const { data } = await api.get('/orders?status=dispatched,partial,packing_in_progress,packing_complete,waiting&limit=100&readyForBill=true');
+      // Fetch orders in dispatched, partial, packing, packing_complete, checked, or hold status
+      const { data } = await api.get('/orders?status=dispatched,partial,packing_in_progress,packing_complete,waiting,checked&limit=100&readyForBill=true');
       const fetchedOrders: any[] = data.orders || [];
       
       const filtered = fetchedOrders.filter((o: any) => {
@@ -29,8 +30,8 @@ const ReadyForBill: React.FC = () => {
         if (o.billInfo && o.billInfo.isSubmitted) {
           return false;
         }
-        // Always display packing or waiting (hold) orders so the bill is accessible
-        if (o.status === 'packing_in_progress' || o.status === 'packing_complete' || o.status === 'waiting') {
+        // Always display packing, checked, or waiting (hold) orders so the bill is accessible
+        if (o.status === 'packing_in_progress' || o.status === 'packing_complete' || o.status === 'waiting' || o.status === 'checked') {
           return true;
         }
         // For partial or fully dispatched orders, only show if they haven't been billed yet
@@ -69,7 +70,16 @@ const ReadyForBill: React.FC = () => {
     navigate(`/billing/${order.billInfo._id}`);
   };
 
-  const totalReady = orders.length;
+  const filteredOrders = orders.filter((order) => {
+    const term = search.toLowerCase();
+    return (
+      order.customerName?.toLowerCase().includes(term) ||
+      order.orderNumber?.toLowerCase().includes(term) ||
+      order.billInfo?.billNumber?.toLowerCase().includes(term)
+    );
+  });
+
+  const totalReady = filteredOrders.length;
 
   return (
     <div className="page-container">
@@ -82,14 +92,38 @@ const ReadyForBill: React.FC = () => {
           animation: blink-animation 0.6s infinite;
         }
       `}</style>
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
         <div>
           <h1 className="page-title">Ready for Bill</h1>
           <p className="page-subtitle">Orders confirmed for dispatch — generate or print bills here</p>
         </div>
-        <button className="btn btn-secondary" onClick={fetchReadyOrders} disabled={loading}>
-          <RefreshCw size={15} style={loading ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="search-bar" style={{ width: '280px', position: 'relative' }}>
+            <Search size={18} className="search-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search customer or order #..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%',
+                height: '42px',
+                padding: '0 1rem 0 2.5rem',
+                borderRadius: '12px',
+                border: '1.5px solid var(--border)',
+                background: 'var(--card)',
+                color: 'var(--text)',
+                fontSize: '0.85rem',
+                fontWeight: 650,
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          <button className="btn btn-secondary" onClick={fetchReadyOrders} disabled={loading} style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <RefreshCw size={15} style={loading ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Banner Message */}
@@ -140,15 +174,19 @@ const ReadyForBill: React.FC = () => {
       {/* Orders List */}
       {loading ? (
         <div className="loading-page"><div className="spinner" /><p>Loading orders...</p></div>
-      ) : orders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">✅</div>
-          <div className="empty-title">All caught up!</div>
-          <div className="empty-text">No orders are ready for billing at the moment.</div>
+          <div className="empty-icon">🔍</div>
+          <div className="empty-title">{orders.length === 0 ? 'All caught up!' : 'No matches found'}</div>
+          <div className="empty-text">
+            {orders.length === 0 
+              ? 'No orders are ready for billing at the moment.' 
+              : 'Try adjusting your search term.'}
+          </div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.25rem' }}>
-          {orders.map(order => {
+          {filteredOrders.map(order => {
             const dispatch = order.dispatchInfo || {};
             const itemCount = order.items?.length || 0;
             const totalQty = order.items?.reduce((s: number, i: any) => s + (i.qtyOrdered || 0), 0) || 0;

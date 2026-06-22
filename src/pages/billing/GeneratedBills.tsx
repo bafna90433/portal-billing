@@ -79,7 +79,7 @@ const GeneratedBills: React.FC = () => {
     }
     if (activeTab === 'pending') {
       if (b.isSubmitted === true) return false;
-      const activeStatuses = ['dispatched', 'partial', 'packing_in_progress', 'packing_complete', 'waiting'];
+      const activeStatuses = ['dispatched', 'partial', 'packing_in_progress', 'packing_complete', 'waiting', 'checked'];
       if (!activeStatuses.includes(b.orderStatus)) return false;
     }
 
