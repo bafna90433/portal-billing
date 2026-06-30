@@ -155,6 +155,16 @@ const BillCreate: React.FC = () => {
         </div>
       )}
 
+      {order?.emergencyRemark && (
+        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius)', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <AlertCircle size={20} color="#EF4444" style={{ marginTop: 2, flexShrink: 0 }} />
+          <div>
+            <div style={{ color: '#EF4444', fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.15rem' }}>🚨 EMERGENCY NOTE</div>
+            <div style={{ color: '#B91C1C', fontWeight: 800, fontSize: '0.92rem' }}>{order.emergencyRemark}</div>
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🧾</div>

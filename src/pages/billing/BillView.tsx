@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Printer, Plus, CheckCircle, Loader, ArrowLeft, MessageCircle, IndianRupee, FileText, ZoomIn, X } from 'lucide-react';
+import { Printer, Plus, CheckCircle, Loader, ArrowLeft, MessageCircle, IndianRupee, FileText, ZoomIn, X, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
@@ -132,6 +132,7 @@ const BillView: React.FC = () => {
             status: order?.status || null,
             stickerQty: order?.items?.[0]?.stickerQty || 0,
             poNo: order?.poNo || null,
+            emergencyRemark: order?.emergencyRemark || null,
           });
 
           if (order?.paperOrderImageUrl) {
@@ -481,6 +482,29 @@ const BillView: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {orderExtra?.emergencyRemark && (
+            <div style={{ 
+              margin: '0 1.8rem 1.8rem 1.8rem', 
+              padding: '1rem 1.25rem', 
+              background: '#FEF2F2', 
+              border: '1.5px solid #FCA5A5', 
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.75rem'
+            }}>
+              <AlertCircle size={20} color="#EF4444" style={{ marginTop: 2, flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
+                  🚨 Emergency Note
+                </div>
+                <div style={{ fontSize: '0.95rem', color: '#991B1B', fontWeight: 800, lineHeight: 1.4 }}>
+                  {orderExtra.emergencyRemark}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="invoice-body">
             <div className="invoice-table-wrapper">

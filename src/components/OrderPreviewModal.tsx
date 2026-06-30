@@ -269,6 +269,44 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
               </div>
             </div>
 
+            {order.emergencyRemark && (
+              <div style={{ 
+                background: '#FEF2F2', 
+                border: '1px solid #FCA5A5', 
+                borderRadius: 12, 
+                padding: '1rem 1.25rem', 
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem'
+              }}>
+                <AlertCircle size={20} color="#EF4444" style={{ marginTop: 2, flexShrink: 0 }} />
+                <div>
+                  <div style={{ color: '#EF4444', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.2rem' }}>EMERGENCY NOTE</div>
+                  <div style={{ color: '#991B1B', fontSize: '0.95rem', fontWeight: 800, lineHeight: 1.4 }}>{order.emergencyRemark}</div>
+                </div>
+              </div>
+            )}
+            
+            {order.notes && (
+              <div style={{ 
+                background: '#FEFCE8', 
+                border: '1px solid #FEF08A', 
+                borderRadius: 12, 
+                padding: '1rem 1.25rem', 
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem'
+              }}>
+                <AlertCircle size={20} color="#CA8A04" style={{ marginTop: 2, flexShrink: 0 }} />
+                <div>
+                  <div style={{ color: '#CA8A04', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.2rem' }}>SALES NOTES</div>
+                  <div style={{ color: '#713F12', fontSize: '0.9rem', lineHeight: 1.4 }}>{order.notes}</div>
+                </div>
+              </div>
+            )}
+
             {/* Actions for Sales Staff / Admin */}
             {((user?.role as string) === 'sale_staff' || (user?.role as string) === 'admin') && (
               <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
