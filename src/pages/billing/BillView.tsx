@@ -577,6 +577,10 @@ const BillView: React.FC = () => {
             <div className="invoice-totals">
               <div className="invoice-totals-box">
                 <div className="invoice-total-row">
+                  <span className="label">Total Qty (Pcs)</span>
+                  <span className="amount" style={{ fontWeight: 700 }}>{(bill?.items?.reduce((acc: number, item: any) => acc + (item.qty || 0), 0) || 0)} pcs</span>
+                </div>
+                <div className="invoice-total-row">
                   <span className="label">Subtotal</span>
                   <span className="amount">₹{bill.subtotal.toFixed(2)}</span>
                 </div>
