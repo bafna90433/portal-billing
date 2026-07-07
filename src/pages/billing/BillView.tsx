@@ -884,10 +884,10 @@ const BillView: React.FC = () => {
                 background: '#111',
                 scrollbarWidth: 'thin'
               }}>
-                {((paperImageUrls && paperImageUrls.length > 0)
+                {(((paperImageUrls && paperImageUrls.length > 0)
                   ? paperImageUrls
                   : [paperImageUrl]
-                ).map((url: string, index: number) => (
+                ).filter(Boolean) as string[]).map((url: string, index: number) => (
                   <div key={index} style={{ cursor: 'zoom-in', lineHeight: 0 }} onClick={() => {
                     setLightboxImg(url);
                     setImageZoomed(true);
