@@ -17,8 +17,10 @@ const BillView: React.FC = () => {
   const [dispatchItems, setDispatchItems] = useState<any[]>([]);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [paperImageUrl, setPaperImageUrl] = useState<string | null>(null);
+  const [paperImageUrls, setPaperImageUrls] = useState<string[]>([]);
   const [dispatch, setDispatch] = useState<any>(null);
   const [imageZoomed, setImageZoomed] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [payModal, setPayModal] = useState(false);
   const [payAmount, setPayAmount] = useState('');
@@ -135,9 +137,12 @@ const BillView: React.FC = () => {
             emergencyRemark: order?.emergencyRemark || null,
           });
 
-          if (order?.paperOrderImageUrl) {
-            setPaperImageUrl(order.paperOrderImageUrl);
-            return;
+          const urls = order?.paperOrderImageUrls && order?.paperOrderImageUrls.length > 0
+            ? order.paperOrderImageUrls
+            : (order?.paperOrderImageUrl ? [order.paperOrderImageUrl] : []);
+          setPaperImageUrls(urls);
+          if (urls.length > 0) {
+            setPaperImageUrl(urls[0]);
           }
         } catch { /* continue to fallback */ }
 
@@ -146,6 +151,7 @@ const BillView: React.FC = () => {
           const { data: paperOrders } = await api.get(`/paper-orders?linkedOrderId=${data.orderId}`);
           if (Array.isArray(paperOrders) && paperOrders.length > 0 && paperOrders[0].imageUrl) {
             setPaperImageUrl(paperOrders[0].imageUrl);
+            setPaperImageUrls([paperOrders[0].imageUrl]);
           }
         } catch { /* no paper order — that's fine */ }
       }
@@ -846,7 +852,7 @@ const BillView: React.FC = () => {
           }}
         >
           {/* Panel 1: Paper Order Slip (if present) */}
-          {paperImageUrl && (
+          {((paperImageUrls && paperImageUrls.length > 0) || paperImageUrl) && (
             <div style={{
               background: 'var(--card)',
               border: '1px solid var(--border)',
@@ -862,23 +868,37 @@ const BillView: React.FC = () => {
               }}>
                 <FileText size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
                 <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>Paper Order Slip</div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>Paper Order Slips ({
+                    paperImageUrls && paperImageUrls.length > 0 ? paperImageUrls.length : 1
+                  })</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Reference for product matching</div>
                 </div>
-                <button
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', padding: '2px' }}
-                  onClick={() => setImageZoomed(true)}
-                  title="View full size"
-                >
-                  <ZoomIn size={15} />
-                </button>
               </div>
-              <div style={{ cursor: 'zoom-in', background: '#111', lineHeight: 0 }} onClick={() => setImageZoomed(true)}>
-                <img
-                  src={paperImageUrl}
-                  alt="Paper Order Slip"
-                  style={{ width: '100%', maxHeight: '240px', objectFit: 'contain', display: 'block' }}
-                />
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '0.75rem', 
+                maxHeight: '350px', 
+                overflowY: 'auto',
+                padding: '0.5rem',
+                background: '#111',
+                scrollbarWidth: 'thin'
+              }}>
+                {((paperImageUrls && paperImageUrls.length > 0)
+                  ? paperImageUrls
+                  : [paperImageUrl]
+                ).map((url: string, index: number) => (
+                  <div key={index} style={{ cursor: 'zoom-in', lineHeight: 0 }} onClick={() => {
+                    setLightboxImg(url);
+                    setImageZoomed(true);
+                  }}>
+                    <img
+                      src={url}
+                      alt={`Paper Order Slip ${index + 1}`}
+                      style={{ width: '100%', maxHeight: '240px', objectFit: 'contain', display: 'block', borderRadius: 4 }}
+                    />
+                  </div>
+                ))}
               </div>
               <div style={{ padding: '0.65rem 1rem', fontSize: '0.7rem', color: 'var(--text-dim)', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
                 Click image to zoom • Use for verification
@@ -1206,7 +1226,7 @@ const BillView: React.FC = () => {
       </div>
 
       {/* Zoomed paper image lightbox */}
-      {imageZoomed && paperImageUrl && (
+      {imageZoomed && (paperImageUrl || lightboxImg) && (
         <div
           className="modal-overlay"
           style={{ background: 'rgba(0,0,0,0.92)', zIndex: 2000 }}
@@ -1227,7 +1247,7 @@ const BillView: React.FC = () => {
               Paper Order Slip — {bill.customerName}
             </div>
             <img
-              src={paperImageUrl}
+              src={lightboxImg || paperImageUrl || ''}
               alt="Paper Order"
               style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8, display: 'block' }}
             />

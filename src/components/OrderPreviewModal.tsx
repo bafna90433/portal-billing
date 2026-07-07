@@ -348,32 +348,52 @@ const OrderPreviewModal: React.FC<OrderPreviewModalProps> = ({ isOpen, onClose, 
               </div>
             )}
 
-            {/* Order Image */}
-            {order.paperOrderImageUrl && (
+            {/* Order Image(s) */}
+            {((order.paperOrderImageUrls && order.paperOrderImageUrls.length > 0) || order.paperOrderImageUrl) && (
               <div style={{ marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Order Image</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Order Images</h3>
                   <button 
                     onClick={() => setShowImage(!showImage)}
                     className="btn btn-secondary btn-sm"
                     style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
                   >
                     <ImageIcon size={14} />
-                    {showImage ? 'Hide Image' : 'View Order Image'}
+                    {showImage ? 'Hide Images' : `View Order Images (${
+                      order.paperOrderImageUrls && order.paperOrderImageUrls.length > 0 
+                        ? order.paperOrderImageUrls.length 
+                        : 1
+                    })`}
                   </button>
                 </div>
                 
                 {showImage && (
-                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', background: '#f8f8f8', marginTop: '1rem', position: 'relative' }}>
-                    <img
-                      src={order.paperOrderImageUrl}
-                      alt="Order"
-                      style={{ width: '100%', maxHeight: 400, objectFit: 'contain', display: 'block', cursor: 'zoom-in' }}
-                      onClick={() => window.open(order.paperOrderImageUrl, '_blank')}
-                    />
-                    <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.6)', color: 'white', padding: '4px 8px', borderRadius: 6, fontSize: '0.7rem', pointerEvents: 'none' }}>
-                      Click to enlarge
-                    </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '1rem',
+                    border: '1px solid var(--border)', 
+                    borderRadius: 'var(--radius-sm)', 
+                    padding: '1rem',
+                    background: '#f8f8f8', 
+                    marginTop: '1rem' 
+                  }}>
+                    {((order.paperOrderImageUrls && order.paperOrderImageUrls.length > 0) 
+                      ? order.paperOrderImageUrls 
+                      : [order.paperOrderImageUrl]
+                    ).map((url: string, index: number) => (
+                      <div key={index} style={{ position: 'relative', border: '1px solid var(--border)', borderRadius: 4, overflow: 'hidden', background: '#fff' }}>
+                        <img
+                          src={url}
+                          alt={`Order ${index + 1}`}
+                          style={{ width: '100%', maxHeight: 400, objectFit: 'contain', display: 'block', cursor: 'zoom-in' }}
+                          onClick={() => window.open(url, '_blank')}
+                        />
+                        <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.6)', color: 'white', padding: '4px 8px', borderRadius: 6, fontSize: '0.7rem', pointerEvents: 'none' }}>
+                          Image {index + 1} - Click to enlarge
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
