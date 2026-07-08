@@ -583,10 +583,6 @@ const BillView: React.FC = () => {
             <div className="invoice-totals">
               <div className="invoice-totals-box">
                 <div className="invoice-total-row">
-                  <span className="label">Total Qty (Pcs)</span>
-                  <span className="amount" style={{ fontWeight: 700 }}>{(bill?.items?.reduce((acc: number, item: any) => acc + (item.qty || 0), 0) || 0)} pcs</span>
-                </div>
-                <div className="invoice-total-row">
                   <span className="label">Subtotal</span>
                   <span className="amount">₹{bill.subtotal.toFixed(2)}</span>
                 </div>
@@ -619,28 +615,7 @@ const BillView: React.FC = () => {
                   <span>Grand Total</span>
                   <span className="amount">₹{bill.totalAmount.toFixed(2)}</span>
                 </div>
-                <div
-                  className="invoice-total-row"
-                  style={{
-                    marginTop: '0.35rem',
-                    paddingTop: '0.5rem',
-                    borderTop: '1px dashed #E5E7EB',
-                    alignItems: 'flex-start',
-                    gap: '0.75rem',
-                  }}
-                >
-                  <span className="label" style={{ fontWeight: 700, color: '#0F172A' }}>Total Box</span>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 800, color: '#0F172A' }}>{totalBoxSummary.totalBox}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 2 }}>
-                      {[
-                        totalBoxSummary.ctn > 0 ? `${totalBoxSummary.ctn} CTN` : null,
-                        totalBoxSummary.inr > 0 ? `${totalBoxSummary.inr} INR` : null,
-                        totalBoxSummary.customLooseBoxesCount > 0 ? `${totalBoxSummary.customLooseBoxesCount} MIX BOX` : null,
-                      ].filter(Boolean).join(' + ') || '0 BOX'}
-                    </div>
-                  </div>
-                </div>
+
                 <div className="invoice-total-row" style={{ marginTop: '0.5rem' }}>
                   <span className="label" style={{ color: 'var(--success)' }}>Paid</span>
                   <span style={{ color: 'var(--success)', fontWeight: 700 }}>₹{bill.paidAmount.toFixed(2)}</span>
@@ -684,39 +659,64 @@ const BillView: React.FC = () => {
           </div>
 
           {/* Footer */}
-            {/* Tax Amount In Words */}
-            <div style={{ 
-              borderTop: '1.5px solid #000', 
-              borderBottom: '1.5px solid #000', 
-              padding: '0.45rem 0.65rem', 
-              fontSize: '0.85rem', 
-              color: '#000', 
-              textAlign: 'left', 
-              marginTop: '1.25rem',
-              fontFamily: 'sans-serif'
-            }}>
-              Tax Amount (in words) : <strong style={{ fontWeight: 800 }}>{convertNumberToWords(bill.totalAmount)}</strong>
-            </div>
-
             {/* Declaration & Bank Details Grid */}
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: '1.2fr 1fr', 
+              borderTop: '1.5px solid #000',
               borderBottom: '1.5px solid #000', 
               fontSize: '0.83rem', 
               color: '#000', 
               fontFamily: 'sans-serif',
-              textAlign: 'left'
+              textAlign: 'left',
+              marginTop: '1.25rem'
             }}>
-              {/* Left Column: Declaration */}
+              {/* Left Column: Totals Summary & Declaration */}
               <div style={{ 
                 padding: '0.65rem', 
                 borderRight: '1.5px solid #000', 
-                lineHeight: 1.45 
+                lineHeight: 1.45,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.65rem'
               }}>
-                <div style={{ textDecoration: 'underline', fontWeight: 700, marginBottom: '0.35rem' }}>Declaration</div>
-                <div style={{ whiteSpace: 'pre-line', fontSize: '0.78rem', fontWeight: 500 }}>
-                  {getDeclaration()}
+                {/* Invoice Totals Summary Column */}
+                <div style={{ 
+                  borderBottom: '1px dashed #000', 
+                  paddingBottom: '0.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.25rem'
+                }}>
+                  <div>Total Qty (Pcs): <strong style={{ fontWeight: 800 }}>{(bill?.items?.reduce((acc: number, item: any) => acc + (item.qty || 0), 0) || 0)} pcs</strong></div>
+                  <div>Total Box: <strong style={{ fontWeight: 800 }}>
+                    {totalBoxSummary.totalBox > 0 ? (
+                      `${totalBoxSummary.totalBox} (${[
+                        totalBoxSummary.ctn > 0 ? `${totalBoxSummary.ctn} CTN` : null,
+                        totalBoxSummary.inr > 0 ? `${totalBoxSummary.inr} INR` : null,
+                        totalBoxSummary.customLooseBoxesCount > 0 ? `${totalBoxSummary.customLooseBoxesCount} MIX BOX` : null,
+                      ].filter(Boolean).join(' + ')})`
+                    ) : (
+                      '0 BOX'
+                    )}
+                  </strong></div>
+                  {(() => {
+                    const stickerCount = dispatch?.items?.[0]?.stickerQty || orderExtra?.stickerQty || 0;
+                    if (stickerCount <= 0) return null;
+                    return (
+                      <div>Total Stickers: <strong style={{ fontWeight: 800 }}>{stickerCount} Pcs</strong></div>
+                    );
+                  })()}
+                  <div style={{ marginTop: '0.15rem' }}>
+                    Tax Amount (in words) : <strong style={{ fontWeight: 800 }}>{convertNumberToWords(bill.totalAmount)}</strong>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ textDecoration: 'underline', fontWeight: 700, marginBottom: '0.35rem' }}>Declaration</div>
+                  <div style={{ whiteSpace: 'pre-line', fontSize: '0.78rem', fontWeight: 500 }}>
+                    {getDeclaration()}
+                  </div>
                 </div>
               </div>
 
