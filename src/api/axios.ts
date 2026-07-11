@@ -17,7 +17,8 @@ api.interceptors.response.use(
   async (err) => {
     const config = err.config;
     if (config) {
-      config._retryCount = config._retryCount || 0;
+      config.headers = config.headers || {};
+      const retryCount = Number(config.headers['x-retry-count'] || 0);
       const MAX_RETRIES = 3;
 
       const isNetworkOrTimeout = 
@@ -25,10 +26,11 @@ api.interceptors.response.use(
         err.message?.includes('timeout') || 
         !err.response;
 
-      if (isNetworkOrTimeout && config._retryCount < MAX_RETRIES) {
-        config._retryCount += 1;
-        const delay = Math.min(2000 * Math.pow(2, config._retryCount - 1), 8000);
-        console.log(`[API Retry] Request to ${config.url} failed. Retrying in ${delay}ms... (Attempt ${config._retryCount}/${MAX_RETRIES})`);
+      if (isNetworkOrTimeout && retryCount < MAX_RETRIES) {
+        const nextRetry = retryCount + 1;
+        config.headers['x-retry-count'] = String(nextRetry);
+        const delay = Math.min(2000 * Math.pow(2, nextRetry - 1), 8000);
+        console.log(`[API Retry] Request to ${config.url} failed. Retrying in ${delay}ms... (Attempt ${nextRetry}/${MAX_RETRIES})`);
         
         await new Promise((resolve) => setTimeout(resolve, delay));
         return api(config);
