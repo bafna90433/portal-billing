@@ -16,7 +16,7 @@ const BillCreate: React.FC = () => {
   const [dispatch, setDispatch] = useState<any>(null);
   const [resolvedDispatchId, setResolvedDispatchId] = useState<string | null>(null);
   const [alreadyBilled, setAlreadyBilled] = useState(false);
-  const [tallyBillNumber, setTallyBillNumber] = useState('');
+  const [tallyBillNumber, setTallyBillNumber] = useState('Baf/26-27/');
   const [urgentModalNote, setUrgentModalNote] = useState<string | null>(null);
 
   useEffect(() => {

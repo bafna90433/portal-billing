@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Search, Edit } from 'lucide-react';
+import { Package, Plus, Search, Edit, RefreshCw } from 'lucide-react';
 import api from '../api/axios';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
@@ -8,23 +8,41 @@ import toast from 'react-hot-toast';
 const Products: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get(`/products?search=${search}&limit=2000`);
-      setProducts(data.products);
-    } catch { }
-    finally { setLoading(false); }
-  };
-
   useEffect(() => {
-    const t = setTimeout(fetchProducts, 350);
-    return () => clearTimeout(t);
+    let active = true;
+
+    const loadData = async () => {
+      if (products.length === 0) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+      try {
+        const { data } = await api.get(`/products?search=${search}&limit=2000`);
+        if (active) {
+          setProducts(data.products);
+        }
+      } catch {
+      } finally {
+        if (active) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    };
+
+    const t = setTimeout(loadData, 100);
+
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
   }, [search]);
 
 
@@ -45,7 +63,11 @@ const Products: React.FC = () => {
       {/* Search */}
       <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
         <div className="search-bar" style={{ maxWidth: '100%' }}>
-          <Search size={16} className="search-icon" />
+          {loading || refreshing ? (
+            <RefreshCw size={16} className="spin" style={{ color: 'var(--primary)' }} />
+          ) : (
+            <Search size={16} className="search-icon" />
+          )}
           <input
             className="form-control"
             placeholder="Search products by name or SKU..."
@@ -55,7 +77,7 @@ const Products: React.FC = () => {
         </div>
       </div>
 
-      {loading ? (
+      {loading && products.length === 0 ? (
         <div className="loading-page"><div className="spinner" /></div>
       ) : products.length === 0 ? (
         <div className="empty-state">
@@ -64,7 +86,7 @@ const Products: React.FC = () => {
           <div className="empty-text">Add products to start managing inventory</div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem', opacity: loading || refreshing ? 0.6 : 1, transition: 'opacity 0.15s ease' }}>
           {products.map(p => {
             const wp = Number(p.wholesalerPrice) || 0;
             const rp = Number(p.retailerPrice) || 0;

@@ -108,7 +108,7 @@ const BillView: React.FC = () => {
         data.balanceDue = Math.max(0, data.totalAmount - (data.paidAmount || 0));
       }
       setBill(data);
-      setTallyBillNoInput(data.tallyBillNumber || '');
+      setTallyBillNoInput(data.tallyBillNumber || 'Baf/26-27/');
 
       if (data.orderId) {
         // Try source 1: paperOrderImageUrl stored on the Order document
@@ -296,7 +296,7 @@ const BillView: React.FC = () => {
               📝 Paper Checking {paperCheckCount > 0 ? `(${paperCheckCount + 1}/3)` : ''}
             </button>
           )}
-          <button className="btn btn-secondary" onClick={() => setEditTallyModal(true)} style={{ color: '#6366F1', borderColor: '#C7D2FE' }} id="edit-tally-btn">
+          <button className="btn btn-secondary" onClick={() => { setTallyBillNoInput(bill.tallyBillNumber || 'Baf/26-27/'); setEditTallyModal(true); }} style={{ color: '#6366F1', borderColor: '#C7D2FE' }} id="edit-tally-btn">
             📑 Tally No: {bill.tallyBillNumber || 'Add'}
           </button>
           {bill.paymentStatus !== 'paid' && (
